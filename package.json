@@ -1,0 +1,42 @@
+{
+  "name": "claude-remote",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "dist/cjs/index.cjs",
+  "module": "dist/esm/index.mjs",
+  "browser": "dist/umd/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test-d.ts"
+  ],
+  "scripts": {
+    "lint": "prettier --check . && eslint --max-warnings=0",
+    "format": "prettier --write . && eslint --fix --max-warnings=0",
+    "test": "vitest",
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "prepublishOnly": "npm run lint && npm run test",
+    "prepack": "rimraf dist && npm run build"
+  },
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@10.18.0",
+  "devDependencies": {
+    "@eslint/js": "^9.37.0",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "eslint": "^9.37.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsdoc": "^61.0.0",
+    "globals": "^16.4.0",
+    "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
+    "rollup-plugin-dts": "^6.2.3",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.0"
+  }
+}
