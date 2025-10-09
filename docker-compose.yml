@@ -1,0 +1,17 @@
+services:
+  sandbox:
+    build: .
+    container_name: sandbox
+    ports:
+      - '2222:22'
+      - '6060:6060'
+    volumes:
+      - ./ssh_key.pub:/home/dev/.ssh/authorized_keys:ro
+      - dev-home:/home/dev
+      - ssh-host-keys:/etc/ssh
+    restart: unless-stopped
+    hostname: sandbox
+
+volumes:
+  dev-home:
+  ssh-host-keys:

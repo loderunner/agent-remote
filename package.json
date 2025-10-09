@@ -19,14 +19,24 @@
     "test": "vitest",
     "build": "rollup -c",
     "dev": "rollup -c -w",
-    "prepublishOnly": "npm run lint && npm run test",
-    "prepack": "rimraf dist && npm run build"
+    "example": "tsx example/index.ts",
+    "clean": "rimraf dist",
+    "clean:all": "git clean -fdx",
+    "prepublishOnly": "pnpm run lint && pnpm run test",
+    "prepack": "pnpm run clean:all && pnpm run build"
   },
   "license": "UNLICENSED",
   "packageManager": "pnpm@10.18.0",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.10",
+    "nanoid": "^5.1.6",
+    "ssh2": "^1.17.0",
+    "zod": "^3.25.76"
+  },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
     "@rollup/plugin-typescript": "^12.1.4",
+    "@types/ssh2": "^1.15.5",
     "eslint": "^9.37.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
@@ -34,8 +44,10 @@
     "globals": "^16.4.0",
     "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
+    "rollup": "^4.52.4",
     "rollup-plugin-dts": "^6.2.3",
     "tslib": "^2.8.1",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.0"
   }

@@ -10,8 +10,12 @@
     "outDir": "dist",
     "declaration": false,
     "moduleResolution": "node10",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "@": ["./src"],
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["src"],
+  "include": ["src", "example"],
   "exclude": ["node_modules", "dist"]
 }
