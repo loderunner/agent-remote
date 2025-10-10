@@ -59,6 +59,10 @@ export type BashOutput = {
    */
   exitCode?: number;
   /**
+   * Signal used to terminate the command
+   */
+  signal?: string;
+  /**
    * Whether the command was killed due to timeout
    */
   killed?: boolean;
@@ -106,6 +110,10 @@ export type BashOutputOutput = {
    * Exit code (when completed)
    */
   exitCode?: number;
+  /**
+   * Signal (when completed)
+   */
+  signal?: string;
 };
 
 export type KillShellInput = {
@@ -130,11 +138,7 @@ export const killShellOutputSchema = z.object({
   killed: z.boolean().describe('Whether the shell was killed'),
 }) satisfies ZodType<KillShellOutput>;
 
-type Shell = {
-  stdout: string;
-  stderr: string;
-  exitCode?: number;
-  status: 'running' | 'completed';
+type Shell = BashOutputOutput & {
   channel: ClientChannel;
 };
 
@@ -260,12 +264,13 @@ export class BashTool {
       }
       shell.stderr += data.toString();
     });
-    channel.on('exit', (code: number) => {
+    channel.on('exit', (code: number, signal: string) => {
       const shell = this.shells.get(shellId);
       if (!shell) {
         throw new Error('Shell not found');
       }
       shell.exitCode = code;
+      shell.signal = signal;
     });
     channel.on('close', () => {
       const shell = this.shells.get(shellId);
@@ -275,7 +280,8 @@ export class BashTool {
       shell.status = 'completed';
       shell.channel.removeAllListeners();
     });
-    channel.end(input.command + '\n');
+    channel.write(input.command + '\n');
+
     return { stdout: '', stderr: '', shellId };
   }
 
@@ -306,7 +312,14 @@ export class BashTool {
     if (!shell) {
       return { killed: false };
     }
-    shell.channel.signal('KILL');
-    return { killed: true };
+    return new Promise((resolve, reject) => {
+      shell.channel.on('close', () => {
+        resolve({ killed: true });
+      });
+      shell.channel.on('error', (err: unknown) => {
+        reject(err);
+      });
+      shell.channel.signal('KILL');
+    });
   }
 }
