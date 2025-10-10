@@ -345,5 +345,64 @@ describe('BashTool', () => {
       expect(output.status).toBe('completed');
       expect(output.exitCode).toBe(0);
     });
+
+    it('should timeout a long-running background command with custom timeout', async () => {
+      const result = await bashTool.execute({
+        command: 'sleep 10 && echo "should not see this"',
+        run_in_background: true,
+        timeout: 500,
+      });
+
+      expect(result.shellId).toBeDefined();
+
+      // Check immediately - should be running
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const output1 = await bashTool.getOutput({ shell_id: result.shellId! });
+      expect(output1.status).toBe('running');
+
+      // Wait for timeout to kick in
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      const output2 = await bashTool.getOutput({ shell_id: result.shellId! });
+      expect(output2.status).toBe('completed');
+      expect(output2.signal).toBe('SIGKILL');
+      expect(output2.stdout).not.toContain('should not see this');
+    });
+
+    it('should capture partial output before timeout in background', async () => {
+      const result = await bashTool.execute({
+        command: 'echo "start" && sleep 10 && echo "should not see this"',
+        run_in_background: true,
+        timeout: 500,
+      });
+
+      expect(result.shellId).toBeDefined();
+
+      // Wait for timeout
+      await new Promise((resolve) => setTimeout(resolve, 700));
+
+      const output = await bashTool.getOutput({ shell_id: result.shellId! });
+      expect(output.status).toBe('completed');
+      expect(output.signal).toBe('SIGKILL');
+      expect(output.stdout).toContain('start');
+      expect(output.stdout).not.toContain('should not see this');
+    });
+
+    it('should not timeout if background command completes within timeout', async () => {
+      const result = await bashTool.execute({
+        command: 'sleep 0.3 && echo "completed"',
+        run_in_background: true,
+        timeout: 2000,
+      });
+
+      expect(result.shellId).toBeDefined();
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      const output = await bashTool.getOutput({ shell_id: result.shellId! });
+      expect(output.status).toBe('completed');
+      expect(output.stdout).toContain('completed');
+      expect(output.exitCode).toBe(0);
+      expect(output.signal).toBeUndefined();
+    });
   });
 });

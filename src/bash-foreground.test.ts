@@ -235,5 +235,38 @@ describe('BashTool', () => {
       expect(shell.stderr.listenerCount('data')).toBe(initialStderrListeners);
       expect(shell.listenerCount('error')).toBe(initialErrorListeners);
     });
+
+    it('should timeout a long-running foreground command', async () => {
+      const result = await bashTool.execute({
+        command: 'sleep 10',
+        timeout: 500,
+      });
+
+      expect(result.killed).toBe(true);
+      expect(result.exitCode).toBeUndefined();
+    });
+
+    it('should respect custom timeout value', async () => {
+      const start = Date.now();
+      const result = await bashTool.execute({
+        command: 'sleep 10',
+        timeout: 300,
+      });
+      const duration = Date.now() - start;
+
+      expect(result.killed).toBe(true);
+      // Should timeout around 300ms, give or take some margin
+      expect(duration).toBeGreaterThanOrEqual(250);
+      expect(duration).toBeLessThan(1000);
+    });
+
+    it('should not timeout if command completes within timeout', async () => {
+      const result = await bashTool.execute({
+        command: 'sleep 0.3 && echo "completed"',
+        timeout: 2000,
+      });
+
+      expect(result.killed).not.toBe(true);
+    });
   });
 });

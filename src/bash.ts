@@ -223,6 +223,7 @@ export class BashTool {
   }
 
   private async executeInForeground(input: BashInput): Promise<BashOutput> {
+    const abortSignal = AbortSignal.timeout(input.timeout ?? 60000);
     const shell = await this.init();
 
     return new Promise((resolve, reject) => {
@@ -268,11 +269,23 @@ export class BashTool {
       shell.stderr.on('data', onStderr);
       shell.on('error', onError);
 
+      abortSignal.addEventListener('abort', () => {
+        this.shell?.removeListener('data', onData);
+        this.shell?.stderr.removeListener('data', onStderr);
+        this.shell?.removeListener('error', onError);
+        resolve({
+          stdout,
+          stderr,
+          killed: true,
+        });
+      });
+
       shell.write(command);
     });
   }
 
   private async executeInBackground(input: BashInput): Promise<BashOutput> {
+    const abortSignal = AbortSignal.timeout(input.timeout ?? 60000);
     const shellId = nanoid();
 
     const channel = await new Promise<ClientChannel>((resolve, reject) => {
@@ -321,6 +334,15 @@ export class BashTool {
       shell.status = 'completed';
       shell.channel.removeAllListeners();
     });
+
+    abortSignal.addEventListener('abort', () => {
+      const shell = this.shells.get(shellId);
+      if (!shell) {
+        throw new Error('Shell not found');
+      }
+      this.killShell({ shell_id: shellId });
+    });
+
     channel.write(input.command + '\n');
 
     return { stdout: '', stderr: '', shellId };

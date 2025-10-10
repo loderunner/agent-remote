@@ -52,9 +52,9 @@ export async function connect(sshConfig: ConnectConfig) {
         },
       },
       {
-        name: 'kill-shell',
+        name: 'kill-bash',
         description:
-          'Kills a running background shell by its ID. Takes a shell_id parameter identifying the shell to kill. Returns a success or failure status.',
+          'Kills a running background shell by its ID. Takes a shell_id parameter identifying the shell to kill, and an optional signal parameter to send to the shell. Returns a success or failure status.',
         inputSchema: killShellInputSchema,
         handler: (input: KillShellInput) => {
           return bashTool.killShell(input);
