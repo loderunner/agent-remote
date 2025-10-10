@@ -11,7 +11,7 @@ import {
 } from './bash';
 
 /**
- *
+ * Connects to a remote SSH server and returns tools for remote execution
  */
 export async function connect(sshConfig: ConnectConfig) {
   const client = new Client();

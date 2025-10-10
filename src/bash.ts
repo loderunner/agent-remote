@@ -206,7 +206,8 @@ export class BashTool {
             const [_, code] = line.split(':');
             exitCode = Number.parseInt(code);
             this.shell?.removeListener('data', onData);
-            this.shell?.removeListener('stderr', onStderr);
+            this.shell?.stderr.removeListener('data', onStderr);
+            this.shell?.removeListener('error', onError);
             resolve({
               stdout,
               stderr,
@@ -220,12 +221,15 @@ export class BashTool {
       const onStderr = (data: Buffer) => {
         stderr += data.toString();
       };
+      const onError = (err: unknown) => {
+        this.shell?.removeListener('data', onData);
+        this.shell?.stderr.removeListener('data', onStderr);
+        this.shell?.removeListener('error', onError);
+        reject(err);
+      };
       shell.on('data', onData);
       shell.stderr.on('data', onStderr);
-
-      shell.on('error', (err: unknown) => {
-        reject(err);
-      });
+      shell.on('error', onError);
 
       shell.write(command);
     });
