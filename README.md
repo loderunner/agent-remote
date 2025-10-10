@@ -47,6 +47,53 @@ ssh -p 2222 dev@localhost
 
 The `dev` user has passwordless sudo access.
 
+## Development
+
+### Installation
+
+Install dependencies:
+
+```bash
+pnpm install
+```
+
+### Testing
+
+**Important:** The test suite requires the sandbox container to be running.
+Tests are integration tests that connect to the actual SSH sandbox rather than
+using mocks.
+
+Start the sandbox before running tests:
+
+```bash
+docker-compose up -d
+```
+
+Run the tests:
+
+```bash
+pnpm test
+```
+
+The tests will connect to `localhost:2222` with credentials `dev:dev` and
+execute real commands over SSH.
+
+### Building
+
+Build the project:
+
+```bash
+pnpm build
+```
+
+### Linting
+
+Check code formatting and linting:
+
+```bash
+pnpm lint
+```
+
 ## Managing the Container
 
 Stop the container:
