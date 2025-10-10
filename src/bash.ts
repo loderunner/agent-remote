@@ -116,15 +116,52 @@ export type BashOutputOutput = {
   signal?: string;
 };
 
+export type KillShellSignal =
+  | 'ABRT'
+  | 'ALRM'
+  | 'FPE'
+  | 'HUP'
+  | 'ILL'
+  | 'INT'
+  | 'KILL'
+  | 'PIPE'
+  | 'QUIT'
+  | 'SEGV'
+  | 'TERM'
+  | 'USR1'
+  | 'USR2';
+
 export type KillShellInput = {
   /**
    * The ID of the background shell to kill
    */
   shell_id: string;
+  /**
+   * The signal to send to the shell (default: KILL)
+   */
+  signal?: KillShellSignal;
 };
 
 export const killShellInputSchema = z.object({
   shell_id: z.string().describe('The ID of the background shell to kill'),
+  signal: z
+    .enum([
+      'ABRT',
+      'ALRM',
+      'FPE',
+      'HUP',
+      'ILL',
+      'INT',
+      'KILL',
+      'PIPE',
+      'QUIT',
+      'SEGV',
+      'TERM',
+      'USR1',
+      'USR2',
+    ])
+    .optional()
+    .describe('The signal to send to the shell (default: KILL)'),
 }) satisfies ZodType<KillShellInput>;
 
 export type KillShellOutput = {
@@ -261,20 +298,20 @@ export class BashTool {
       }
       shell.stdout += data.toString();
     });
-    channel.on('stderr', (data: Buffer) => {
+    channel.stderr.on('data', (data: Buffer) => {
       const shell = this.shells.get(shellId);
       if (!shell) {
         throw new Error('Shell not found');
       }
       shell.stderr += data.toString();
     });
-    channel.on('exit', (code: number, signal: string) => {
+    channel.on('exit', (code: number | null, signal: string | null) => {
       const shell = this.shells.get(shellId);
       if (!shell) {
         throw new Error('Shell not found');
       }
-      shell.exitCode = code;
-      shell.signal = signal;
+      shell.exitCode = code ?? undefined;
+      shell.signal = signal ?? undefined;
     });
     channel.on('close', () => {
       const shell = this.shells.get(shellId);
@@ -308,7 +345,13 @@ export class BashTool {
     }
     shell.stdout = '';
     shell.stderr = '';
-    return { stdout, stderr, status: shell.status, exitCode: shell.exitCode };
+    return {
+      stdout,
+      stderr,
+      status: shell.status,
+      exitCode: shell.exitCode,
+      signal: shell.signal,
+    };
   }
 
   public async killShell(input: KillShellInput): Promise<KillShellOutput> {
@@ -323,7 +366,7 @@ export class BashTool {
       shell.channel.on('error', (err: unknown) => {
         reject(err);
       });
-      shell.channel.signal('KILL');
+      shell.channel.signal(input.signal ?? 'KILL');
     });
   }
 }
