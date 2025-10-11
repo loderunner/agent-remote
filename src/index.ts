@@ -1,4 +1,6 @@
+import { ToolCallback } from '@modelcontextprotocol/sdk/server/mcp';
 import { Client, ConnectConfig } from 'ssh2';
+import { ZodRawShape } from 'zod';
 
 import {
   BashInput,
@@ -10,8 +12,21 @@ import {
   killShellInputSchema,
 } from './bash';
 
+type ToolDefinition<InputArgs extends ZodRawShape> = {
+  name: string;
+  description: string;
+  inputSchema: InputArgs;
+  handler: ToolCallback<InputArgs>;
+};
+
+function tool<InputArgs extends ZodRawShape>(
+  definition: ToolDefinition<InputArgs>,
+): ToolDefinition<InputArgs> {
+  return definition;
+}
+
 /**
- * Connects to a remote SSH server and returns tools for remote execution
+ * Connects to a remote SSH server and returns tool for remote execution
  */
 export async function connect(sshConfig: ConnectConfig) {
   const client = new Client();
@@ -33,33 +48,60 @@ export async function connect(sshConfig: ConnectConfig) {
       client.destroy();
     },
     tools: [
-      {
+      tool({
         name: 'bash',
         description:
           'Executes a bash command in a persistent shell session with optional timeout. For terminal operations like git, npm, docker, etc. DO NOT use for file operations - use specialized tools instead.',
-        inputSchema: bashInputSchema,
-        handler: (input: BashInput) => {
-          return bashTool.execute(input);
+        inputSchema: bashInputSchema.shape,
+        handler: async (input: BashInput) => {
+          const output = await bashTool.execute(input);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: output.stdout,
+              },
+            ],
+            structuredContent: output,
+          };
         },
-      },
-      {
+      }),
+      tool({
         name: 'bash-output',
         description:
           'Retrieves output from a running or completed background bash shell. Takes a shell_id parameter identifying the shell. Always returns only new output since the last check. Returns stdout and stderr output along with shell status.',
-        inputSchema: bashOutputInputSchema,
-        handler: (input: BashOutputInput) => {
-          return bashTool.getOutput(input);
+        inputSchema: bashOutputInputSchema.shape,
+        handler: async (input: BashOutputInput) => {
+          const output = await bashTool.getOutput(input);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: output.stdout,
+              },
+            ],
+            structuredContent: output,
+          };
         },
-      },
-      {
+      }),
+      tool({
         name: 'kill-bash',
         description:
           'Kills a running background shell by its ID. Takes a shell_id parameter identifying the shell to kill, and an optional signal parameter to send to the shell. Returns a success or failure status.',
-        inputSchema: killShellInputSchema,
-        handler: (input: KillShellInput) => {
-          return bashTool.killShell(input);
+        inputSchema: killShellInputSchema.shape,
+        handler: async (input: KillShellInput) => {
+          const output = await bashTool.killShell(input);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Shell ${input.shell_id} ${output.killed ? 'killed' : 'not found'}`,
+              },
+            ],
+            structuredContent: output,
+          };
         },
-      },
-    ] as const,
-  } as const;
+      }),
+    ],
+  };
 }
