@@ -41,14 +41,50 @@ describe('BashTool', () => {
 
       expect(result.shellId).toBeDefined();
       expect(result.shellId).toHaveLength(8);
-      expect(result.stdout).toBe('');
-      expect(result.stderr).toBe('');
+      expect(result.output).toBe('');
 
       // Give it time to complete
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const output = await bashTool.getOutput({ shell_id: result.shellId! });
-      expect(output.stdout).toContain('Hello, Background!');
+      expect(output.output).toContain('Hello, Background!');
+      expect(output.status).toBe('completed');
+      expect(output.exitCode).toBe(0);
+    });
+
+    it('should not echo the command in output', async () => {
+      const command = 'echo "test output for no echo"';
+      const result = await bashTool.execute({
+        command,
+        run_in_background: true,
+      });
+
+      expect(result.shellId).toBeDefined();
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const output = await bashTool.getOutput({ shell_id: result.shellId! });
+      // Should contain the actual output
+      expect(output.output).toContain('test output for no echo');
+      // Should NOT contain the command itself
+      expect(output.output).not.toContain('echo "test output for no echo"');
+      expect(output.status).toBe('completed');
+      expect(output.exitCode).toBe(0);
+    });
+
+    it('should not include motd or shell initialization in output', async () => {
+      const result = await bashTool.execute({
+        command: 'true',
+        run_in_background: true,
+      });
+
+      expect(result.shellId).toBeDefined();
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const output = await bashTool.getOutput({ shell_id: result.shellId! });
+      // Output should be completely empty for a command with no output
+      expect(output.output).toBe('');
       expect(output.status).toBe('completed');
       expect(output.exitCode).toBe(0);
     });
@@ -71,7 +107,7 @@ describe('BashTool', () => {
 
       const output2 = await bashTool.getOutput({ shell_id: result.shellId! });
       expect(output2.status).toBe('completed');
-      expect(output2.stdout).toContain('done');
+      expect(output2.output).toContain('done');
       expect(output2.exitCode).toBe(0);
     });
 
@@ -99,7 +135,7 @@ describe('BashTool', () => {
       expect(output3.status).toBe('completed');
 
       // Combine all outputs
-      const allOutput = output1.stdout + output2.stdout + output3.stdout;
+      const allOutput = output1.output + output2.output + output3.output;
       expect(allOutput).toContain('line1');
       expect(allOutput).toContain('line2');
       expect(allOutput).toContain('line3');
@@ -116,8 +152,8 @@ describe('BashTool', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const output = await bashTool.getOutput({ shell_id: result.shellId! });
-      expect(output.stdout).toContain('stdout message');
-      expect(output.stderr).toContain('stderr message');
+      expect(output.output).toContain('stdout message');
+      expect(output.output).toContain('stderr message');
       expect(output.status).toBe('completed');
       expect(output.exitCode).toBe(0);
     });
@@ -133,7 +169,7 @@ describe('BashTool', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const output = await bashTool.getOutput({ shell_id: result.shellId! });
-      expect(output.stderr).toContain('No such file or directory');
+      expect(output.output).toContain('No such file or directory');
       expect(output.status).toBe('completed');
       expect(output.exitCode).not.toBe(0);
     });
@@ -154,10 +190,10 @@ describe('BashTool', () => {
         filter: '^found',
       });
 
-      expect(output.stdout).toContain('found1');
-      expect(output.stdout).toContain('found2');
-      expect(output.stdout).not.toContain('skipped');
-      expect(output.stdout).not.toContain('ignored');
+      expect(output.output).toContain('found1');
+      expect(output.output).toContain('found2');
+      expect(output.output).not.toContain('skipped');
+      expect(output.output).not.toContain('ignored');
     });
 
     it('should handle multiple background commands simultaneously', async () => {
@@ -188,9 +224,9 @@ describe('BashTool', () => {
       const output2 = await bashTool.getOutput({ shell_id: result2.shellId! });
       const output3 = await bashTool.getOutput({ shell_id: result3.shellId! });
 
-      expect(output1.stdout).toContain('first done');
-      expect(output2.stdout).toContain('second done');
-      expect(output3.stdout).toContain('third done');
+      expect(output1.output).toContain('first done');
+      expect(output2.output).toContain('second done');
+      expect(output3.output).toContain('third done');
       expect(output1.status).toBe('completed');
       expect(output2.status).toBe('completed');
       expect(output3.status).toBe('completed');
@@ -219,7 +255,7 @@ describe('BashTool', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
       const output2 = await bashTool.getOutput({ shell_id: result.shellId! });
       expect(output2.status).toBe('completed');
-      expect(output2.stdout).not.toContain('should not see this');
+      expect(output2.output).not.toContain('should not see this');
       expect(output2.signal).toBe('SIGKILL');
     });
 
@@ -248,7 +284,7 @@ describe('BashTool', () => {
       const output2 = await bashTool.getOutput({ shell_id: result.shellId! });
       expect(output2.status).toBe('completed');
       expect(output2.signal).toBe('SIGTERM');
-      expect(output2.stdout).not.toContain('should not see this');
+      expect(output2.output).not.toContain('should not see this');
     });
 
     it('should return false when killing non-existent shell', async () => {
@@ -273,8 +309,8 @@ describe('BashTool', () => {
       await new Promise((resolve) => setTimeout(resolve, 200));
 
       const output = await bashTool.getOutput({ shell_id: result.shellId! });
-      expect(output.stdout).toContain('Line 1');
-      expect(output.stdout).toContain('Line 100');
+      expect(output.output).toContain('Line 1');
+      expect(output.output).toContain('Line 100');
       expect(output.status).toBe('completed');
     });
 
@@ -289,7 +325,7 @@ describe('BashTool', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const output = await bashTool.getOutput({ shell_id: result.shellId! });
-      expect(output.stdout).toContain('HELLO WORLD');
+      expect(output.output).toContain('HELLO WORLD');
       expect(output.status).toBe('completed');
       expect(output.exitCode).toBe(0);
     });
@@ -305,13 +341,13 @@ describe('BashTool', () => {
       // First read
       await new Promise((resolve) => setTimeout(resolve, 100));
       const output1 = await bashTool.getOutput({ shell_id: result.shellId! });
-      expect(output1.stdout).toContain('message1');
+      expect(output1.output).toContain('message1');
 
       // Second read - should only have new output
       await new Promise((resolve) => setTimeout(resolve, 400));
       const output2 = await bashTool.getOutput({ shell_id: result.shellId! });
-      expect(output2.stdout).not.toContain('message1');
-      expect(output2.stdout).toContain('message2');
+      expect(output2.output).not.toContain('message1');
+      expect(output2.output).toContain('message2');
     });
 
     it('should handle background command with environment variables', async () => {
@@ -325,7 +361,7 @@ describe('BashTool', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const output = await bashTool.getOutput({ shell_id: result.shellId! });
-      expect(output.stdout).toContain('background test');
+      expect(output.output).toContain('background test');
       expect(output.status).toBe('completed');
     });
 
@@ -341,7 +377,7 @@ describe('BashTool', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const output = await bashTool.getOutput({ shell_id: result.shellId! });
-      expect(output.stdout).toContain('background content');
+      expect(output.output).toContain('background content');
       expect(output.status).toBe('completed');
       expect(output.exitCode).toBe(0);
     });
@@ -365,7 +401,7 @@ describe('BashTool', () => {
       const output2 = await bashTool.getOutput({ shell_id: result.shellId! });
       expect(output2.status).toBe('completed');
       expect(output2.signal).toBe('SIGKILL');
-      expect(output2.stdout).not.toContain('should not see this');
+      expect(output2.output).not.toContain('should not see this');
     });
 
     it('should capture partial output before timeout in background', async () => {
@@ -383,8 +419,8 @@ describe('BashTool', () => {
       const output = await bashTool.getOutput({ shell_id: result.shellId! });
       expect(output.status).toBe('completed');
       expect(output.signal).toBe('SIGKILL');
-      expect(output.stdout).toContain('start');
-      expect(output.stdout).not.toContain('should not see this');
+      expect(output.output).toContain('start');
+      expect(output.output).not.toContain('should not see this');
     });
 
     it('should not timeout if background command completes within timeout', async () => {
@@ -400,9 +436,68 @@ describe('BashTool', () => {
 
       const output = await bashTool.getOutput({ shell_id: result.shellId! });
       expect(output.status).toBe('completed');
-      expect(output.stdout).toContain('completed');
+      expect(output.output).toContain('completed');
       expect(output.exitCode).toBe(0);
       expect(output.signal).toBeUndefined();
+    });
+
+    it('should capture output from both stdout and stderr in background', async () => {
+      const result = await bashTool.execute({
+        command:
+          'echo "line1 stdout" && echo "line2 stderr" >&2 && echo "line3 stdout"',
+        run_in_background: true,
+      });
+
+      expect(result.shellId).toBeDefined();
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const output = await bashTool.getOutput({ shell_id: result.shellId! });
+      expect(output.output).toContain('line1 stdout');
+      expect(output.output).toContain('line2 stderr');
+      expect(output.output).toContain('line3 stdout');
+      expect(output.status).toBe('completed');
+      expect(output.exitCode).toBe(0);
+    });
+
+    it('should interleave stdout and stderr in output for background', async () => {
+      const result = await bashTool.execute({
+        command:
+          'echo "stdout1" && echo "stderr1" >&2 && echo "stdout2" && echo "stderr2" >&2',
+        run_in_background: true,
+      });
+
+      expect(result.shellId).toBeDefined();
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const output = await bashTool.getOutput({ shell_id: result.shellId! });
+      // Verify all content is captured
+      expect(output.output).toContain('stdout1');
+      expect(output.output).toContain('stderr1');
+      expect(output.output).toContain('stdout2');
+      expect(output.output).toContain('stderr2');
+    });
+
+    it('should clear output after each getOutput call', async () => {
+      const result = await bashTool.execute({
+        command:
+          'echo "msg1 out" && echo "msg1 err" >&2 && sleep 0.3 && echo "msg2 out" && echo "msg2 err" >&2',
+        run_in_background: true,
+      });
+
+      expect(result.shellId).toBeDefined();
+
+      // First read
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      const output1 = await bashTool.getOutput({ shell_id: result.shellId! });
+      expect(output1.output).toContain('msg1');
+
+      // Second read - should only have new output
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      const output2 = await bashTool.getOutput({ shell_id: result.shellId! });
+      expect(output2.output).not.toContain('msg1');
+      expect(output2.output).toContain('msg2');
     });
   });
 });

@@ -47,13 +47,9 @@ export const bashInputSchema = z.object({
 
 export type BashOutput = {
   /**
-   * stdout output
+   * Command output - combined stdout and stderr
    */
-  stdout: string;
-  /**
-   * stderr output
-   */
-  stderr: string;
+  output: string;
   /**
    * Exit code of the command
    */
@@ -95,13 +91,9 @@ export const bashOutputInputSchema = z.object({
 
 export type BashOutputOutput = {
   /**
-   * The stdout output of the command
+   * The output of the command - combined stdout and stderr
    */
-  stdout: string;
-  /**
-   * The stderr output of the command
-   */
-  stderr: string;
+  output: string;
   /**
    * Current shell status
    */
@@ -179,6 +171,14 @@ type Shell = BashOutputOutput & {
   channel: ClientChannel;
 };
 
+async function flush(shell: ClientChannel): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  let buf: Buffer;
+  do {
+    buf = shell.stdout.read();
+  } while (buf !== null && buf.length > 0);
+}
+
 export class BashTool {
   private shell: ClientChannel | null = null;
   private readonly shells = new Map<string, Shell>();
@@ -194,30 +194,28 @@ export class BashTool {
   }
 
   public async init(): Promise<ClientChannel> {
-    if (this.shell) {
-      return this.shell;
-    }
-    this.shell = await new Promise<ClientChannel>((resolve, reject) => {
-      this.client.shell(false, (err, channel) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(channel);
+    if (!this.shell) {
+      this.shell = await new Promise<ClientChannel>((resolve, reject) => {
+        this.client.shell(
+          {
+            modes: { ECHO: 0, ONLRET: 0, ONLCR: 0, OPOST: 0 },
+            term: 'dumb',
+          },
+          (err, channel) => {
+            if (err) {
+              reject(err);
+              return;
+            }
+            resolve(channel);
+          },
+        );
       });
-    });
-    this.shell.on('close', () => {
-      this.shell = null;
-    });
+      this.shell.on('close', () => {
+        this.shell = null;
+      });
+    }
 
-    // empty stdout and stderr
-    let buf: Buffer;
-    do {
-      buf = this.shell.stdout.read();
-    } while (buf !== null && buf.length > 0);
-    do {
-      buf = this.shell.stderr.read();
-    } while (buf !== null && buf.length > 0);
+    await flush(this.shell);
 
     return this.shell;
   }
@@ -228,59 +226,72 @@ export class BashTool {
 
     return new Promise((resolve, reject) => {
       const endMarker = `__CMD_END_${Date.now()}_${nanoid()}__`;
+      const command = input.command + ';' + `echo "${endMarker}:$?"`;
 
-      const command = input.command + ';' + `echo "${endMarker}:$?"\n`;
-      let stdout = '';
-      let stderr = '';
+      let output = '';
       let exitCode: number;
+      let timedOut = false;
 
       const onData = (data: Buffer) => {
         const lines = data.toString().split('\n');
         for (const line of lines) {
-          if (line === command) {
-            continue;
-          }
+          // If we've seen the end marker, stop listening for data and resolve
           if (line.startsWith(endMarker)) {
             const [_, code] = line.split(':');
             exitCode = Number.parseInt(code);
             this.shell?.removeListener('data', onData);
-            this.shell?.stderr.removeListener('data', onStderr);
             this.shell?.removeListener('error', onError);
+
+            // If already timed out, we were just cleaning up - don't resolve again
+            if (timedOut) {
+              return;
+            }
+
             resolve({
-              stdout,
-              stderr,
+              output,
               exitCode: Number.isNaN(exitCode) ? undefined : exitCode,
             });
             return;
           }
-          stdout += line + '\n';
+
+          // Don't accumulate output after timeout, just consume it
+          if (timedOut) {
+            continue;
+          }
+
+          output += line + '\n';
         }
-      };
-      const onStderr = (data: Buffer) => {
-        stderr += data.toString();
       };
       const onError = (err: unknown) => {
         this.shell?.removeListener('data', onData);
-        this.shell?.stderr.removeListener('data', onStderr);
         this.shell?.removeListener('error', onError);
         reject(err);
       };
       shell.on('data', onData);
-      shell.stderr.on('data', onStderr);
       shell.on('error', onError);
 
       abortSignal.addEventListener('abort', () => {
-        this.shell?.removeListener('data', onData);
-        this.shell?.stderr.removeListener('data', onStderr);
-        this.shell?.removeListener('error', onError);
+        // Mark as timed out but keep listeners to consume the end marker
+        timedOut = true;
+        // Send Ctrl+C to interrupt, then send two newlines to clear any partial input
+        // and ensure we're at a clean prompt
+        this.shell?.write('\x03\n\n');
+
+        // Set a cleanup timeout - if end marker doesn't arrive within a reasonable time,
+        // forcefully remove the listeners to prevent them from interfering with future commands
+        setTimeout(() => {
+          this.shell?.removeListener('data', onData);
+          this.shell?.removeListener('error', onError);
+        }, 500);
+
+        // Resolve immediately but listeners stay active to clean up
         resolve({
-          stdout,
-          stderr,
+          output,
           killed: true,
         });
       });
 
-      shell.write(command);
+      shell.write(command + '\n');
     });
   }
 
@@ -289,18 +300,26 @@ export class BashTool {
     const shellId = nanoid();
 
     const channel = await new Promise<ClientChannel>((resolve, reject) => {
-      this.client.exec(input.command, (err, channel) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(channel);
-      });
+      this.client.exec(
+        input.command,
+        // {
+        //   pty: {
+        //     modes: { ECHO: 0, ONLRET: 0, ONLCR: 0, OPOST: 0 },
+        //     term: 'dumb',
+        //   },
+        // },
+        (err, channel) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve(channel);
+        },
+      );
     });
 
     this.shells.set(shellId, {
-      stdout: '',
-      stderr: '',
+      output: '',
       status: 'running',
       channel,
     });
@@ -309,14 +328,16 @@ export class BashTool {
       if (!shell) {
         throw new Error('Shell not found');
       }
-      shell.stdout += data.toString();
+      const text = data.toString();
+      shell.output += text;
     });
     channel.stderr.on('data', (data: Buffer) => {
       const shell = this.shells.get(shellId);
       if (!shell) {
         throw new Error('Shell not found');
       }
-      shell.stderr += data.toString();
+      const text = data.toString();
+      shell.output += text;
     });
     channel.on('exit', (code: number | null, signal: string | null) => {
       const shell = this.shells.get(shellId);
@@ -345,7 +366,7 @@ export class BashTool {
 
     channel.write(input.command + '\n');
 
-    return { stdout: '', stderr: '', shellId };
+    return { output: '', shellId };
   }
 
   public async getOutput(input: BashOutputInput): Promise<BashOutputOutput> {
@@ -353,23 +374,17 @@ export class BashTool {
     if (!shell) {
       throw new Error('Shell not found');
     }
-    let { stdout, stderr } = shell;
+    let { output } = shell;
     if (input.filter) {
       const regex = new RegExp(input.filter);
-      stdout = stdout
-        .split('\n')
-        .filter((line) => regex.test(line))
-        .join('\n');
-      stderr = stderr
+      output = output
         .split('\n')
         .filter((line) => regex.test(line))
         .join('\n');
     }
-    shell.stdout = '';
-    shell.stderr = '';
+    shell.output = '';
     return {
-      stdout,
-      stderr,
+      output,
       status: shell.status,
       exitCode: shell.exitCode,
       signal: shell.signal,

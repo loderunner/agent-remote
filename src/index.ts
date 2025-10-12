@@ -59,7 +59,7 @@ export async function connect(sshConfig: ConnectConfig) {
             content: [
               {
                 type: 'text',
-                text: output.stdout,
+                text: output.output,
               },
             ],
             structuredContent: output,
@@ -69,7 +69,7 @@ export async function connect(sshConfig: ConnectConfig) {
       tool({
         name: 'bash-output',
         description:
-          'Retrieves output from a running or completed background bash shell. Takes a shell_id parameter identifying the shell. Always returns only new output since the last check. Returns stdout and stderr output along with shell status.',
+          'Retrieves output from a running or completed background bash shell. Takes a shell_id parameter identifying the shell. Always returns only new output since the last check. Returns command output along with shell status.',
         inputSchema: bashOutputInputSchema.shape,
         handler: async (input: BashOutputInput) => {
           const output = await bashTool.getOutput(input);
@@ -77,7 +77,7 @@ export async function connect(sshConfig: ConnectConfig) {
             content: [
               {
                 type: 'text',
-                text: output.stdout,
+                text: output.output,
               },
             ],
             structuredContent: output,

@@ -33,13 +33,12 @@ describe('BashTool', () => {
       client.destroy();
     });
 
-    it('should execute a simple command and return stdout', async () => {
+    it('should execute a simple command and return output', async () => {
       const result = await bashTool.execute({
         command: 'echo "Hello, World!"',
       });
 
-      expect(result.stdout).toContain('Hello, World!');
-      expect(result.stderr).toBe('');
+      expect(result.output).toContain('Hello, World!');
       expect(result.exitCode).toBe(0);
     });
 
@@ -56,9 +55,9 @@ describe('BashTool', () => {
         command: 'printf "line1\\nline2\\nline3\\n"',
       });
 
-      expect(result.stdout).toContain('line1');
-      expect(result.stdout).toContain('line2');
-      expect(result.stdout).toContain('line3');
+      expect(result.output).toContain('line1');
+      expect(result.output).toContain('line2');
+      expect(result.output).toContain('line3');
       expect(result.exitCode).toBe(0);
     });
 
@@ -67,7 +66,7 @@ describe('BashTool', () => {
         command: 'echo "Special chars: $HOME | grep | > < & ; ()"',
       });
 
-      expect(result.stdout).toContain('Special chars:');
+      expect(result.output).toContain('Special chars:');
       expect(result.exitCode).toBe(0);
     });
 
@@ -76,7 +75,7 @@ describe('BashTool', () => {
         command: 'echo "hello world" | tr "a-z" "A-Z"',
       });
 
-      expect(result.stdout).toContain('HELLO WORLD');
+      expect(result.output).toContain('HELLO WORLD');
       expect(result.exitCode).toBe(0);
     });
 
@@ -86,7 +85,7 @@ describe('BashTool', () => {
           'echo "test content" > /tmp/test_file.txt && cat /tmp/test_file.txt && rm /tmp/test_file.txt',
       });
 
-      expect(result.stdout).toContain('test content');
+      expect(result.output).toContain('test content');
       expect(result.exitCode).toBe(0);
     });
 
@@ -95,7 +94,7 @@ describe('BashTool', () => {
         command: 'TEST_VAR="hello" && echo $TEST_VAR',
       });
 
-      expect(result.stdout).toContain('hello');
+      expect(result.output).toContain('hello');
       expect(result.exitCode).toBe(0);
     });
 
@@ -104,7 +103,7 @@ describe('BashTool', () => {
         command: 'sleep 1 && echo "done"',
       });
 
-      expect(result.stdout).toContain('done');
+      expect(result.output).toContain('done');
       expect(result.exitCode).toBe(0);
     });
 
@@ -117,7 +116,7 @@ describe('BashTool', () => {
       const result2 = await bashTool.execute({
         command: 'pwd',
       });
-      expect(result2.stdout).toContain('/tmp');
+      expect(result2.output).toContain('/tmp');
     });
 
     it('should handle commands with large output', async () => {
@@ -125,8 +124,8 @@ describe('BashTool', () => {
         command: 'for i in {1..100}; do echo "Line $i"; done',
       });
 
-      expect(result.stdout).toContain('Line 1');
-      expect(result.stdout).toContain('Line 100');
+      expect(result.output).toContain('Line 1');
+      expect(result.output).toContain('Line 100');
       expect(result.exitCode).toBe(0);
     });
 
@@ -135,17 +134,17 @@ describe('BashTool', () => {
         command: 'ls /nonexistent_directory',
       });
 
-      expect(result.stderr).toContain('No such file or directory');
+      expect(result.output).toContain('No such file or directory');
       expect(result.exitCode).not.toBe(0);
     });
 
-    it('should capture both stdout and stderr for failing command', async () => {
+    it('should capture output for failing command', async () => {
       const result = await bashTool.execute({
         command: 'echo "before error" && ls /nonexistent_path_xyz',
       });
 
-      expect(result.stdout).toContain('before error');
-      expect(result.stderr).toContain('No such file or directory');
+      expect(result.output).toContain('before error');
+      expect(result.output).toContain('No such file or directory');
       expect(result.exitCode).not.toBe(0);
     });
 
@@ -154,9 +153,9 @@ describe('BashTool', () => {
         command: 'echo "first"; echo "second"; echo "third"',
       });
 
-      expect(result.stdout).toContain('first');
-      expect(result.stdout).toContain('second');
-      expect(result.stdout).toContain('third');
+      expect(result.output).toContain('first');
+      expect(result.output).toContain('second');
+      expect(result.output).toContain('third');
       expect(result.exitCode).toBe(0);
     });
 
@@ -165,8 +164,8 @@ describe('BashTool', () => {
         command: 'echo "success" && echo "also success"',
       });
 
-      expect(result.stdout).toContain('success');
-      expect(result.stdout).toContain('also success');
+      expect(result.output).toContain('success');
+      expect(result.output).toContain('also success');
       expect(result.exitCode).toBe(0);
     });
 
@@ -175,7 +174,7 @@ describe('BashTool', () => {
         command: 'false || echo "fallback"',
       });
 
-      expect(result.stdout).toContain('fallback');
+      expect(result.output).toContain('fallback');
       expect(result.exitCode).toBe(0);
     });
 
@@ -185,7 +184,7 @@ describe('BashTool', () => {
       });
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toBe('');
+      expect(result.output).toBe('');
     });
 
     it('should handle command with quotes', async () => {
@@ -193,8 +192,8 @@ describe('BashTool', () => {
         command: 'echo "double quotes" && echo \'single quotes\'',
       });
 
-      expect(result.stdout).toContain('double quotes');
-      expect(result.stdout).toContain('single quotes');
+      expect(result.output).toContain('double quotes');
+      expect(result.output).toContain('single quotes');
       expect(result.exitCode).toBe(0);
     });
 
@@ -203,17 +202,19 @@ describe('BashTool', () => {
         command: 'cd /tmp && echo "Current dir: $(pwd)"',
       });
 
-      expect(result.stdout).toContain('Current dir:');
-      expect(result.stdout).toContain('/tmp');
+      expect(result.output).toContain('Current dir:');
+      expect(result.output).toContain('/tmp');
       expect(result.exitCode).toBe(0);
     });
 
-    it('should not include the command itself in stdout', async () => {
+    it('should not include the command itself in output', async () => {
       const command = 'echo "test output"';
       const result = await bashTool.execute({ command });
 
-      const lines = result.stdout.split('\n').filter((line) => line.trim());
-      expect(lines).not.toContain(command);
+      const lines = result.output.split('\n').filter((line) => line.trim());
+      expect(lines).not.toContain(
+        expect.stringMatching(new RegExp(`^${command}`)),
+      );
       expect(lines.some((line) => line.includes('test output'))).toBe(true);
     });
 
@@ -222,7 +223,6 @@ describe('BashTool', () => {
 
       // Get initial listener counts
       const initialDataListeners = shell.listenerCount('data');
-      const initialStderrListeners = shell.stderr.listenerCount('data');
       const initialErrorListeners = shell.listenerCount('error');
 
       // Run multiple commands
@@ -232,13 +232,12 @@ describe('BashTool', () => {
 
       // Verify listener counts haven't increased
       expect(shell.listenerCount('data')).toBe(initialDataListeners);
-      expect(shell.stderr.listenerCount('data')).toBe(initialStderrListeners);
       expect(shell.listenerCount('error')).toBe(initialErrorListeners);
     });
 
     it('should timeout a long-running foreground command', async () => {
       const result = await bashTool.execute({
-        command: 'sleep 10',
+        command: 'sleep 3',
         timeout: 500,
       });
 
@@ -249,12 +248,13 @@ describe('BashTool', () => {
     it('should respect custom timeout value', async () => {
       const start = Date.now();
       const result = await bashTool.execute({
-        command: 'sleep 10',
+        command: 'sleep 3',
         timeout: 300,
       });
       const duration = Date.now() - start;
 
       expect(result.killed).toBe(true);
+
       // Should timeout around 300ms, give or take some margin
       expect(duration).toBeGreaterThanOrEqual(250);
       expect(duration).toBeLessThan(1000);
@@ -267,6 +267,17 @@ describe('BashTool', () => {
       });
 
       expect(result.killed).not.toBe(true);
+    });
+
+    it('should capture output including errors', async () => {
+      const result = await bashTool.execute({
+        command:
+          'echo "before error" && ls /nonexistent_path_abc && echo "after error"',
+      });
+
+      expect(result.output).toContain('before error');
+      expect(result.output).toMatch(/before error.*No such file or directory/s);
+      expect(result.exitCode).not.toBe(0);
     });
   });
 });
