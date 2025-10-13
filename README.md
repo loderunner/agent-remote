@@ -7,20 +7,12 @@ A containerized Ubuntu development environment accessible via SSH.
 - Docker and Docker Compose
 - SSH client
 
-## Setup
-
-The project includes SSH keys for authentication. If you need to regenerate
-them:
-
-```bash
-ssh-keygen -t ed25519 -f ssh_key -N "" -C "dev@sandbox"
-```
-
 ## Running the Sandbox
 
 Build and start the container:
 
 ```bash
+cd sandbox
 docker-compose up -d
 ```
 
@@ -30,13 +22,14 @@ This will:
 - Start the container named `sandbox`
 - Expose SSH on port 2222
 - Mount the public key for authentication
+- Mount test fixtures at `/home/dev/fixtures`
 
 ## Connecting
 
 SSH into the dev sandbox:
 
 ```bash
-ssh -i ssh_key -p 2222 dev@localhost
+ssh -i sandbox/ssh_key -p 2222 dev@localhost
 ```
 
 Or use password authentication (password: `dev`):
@@ -66,7 +59,9 @@ using mocks.
 Start the sandbox before running tests:
 
 ```bash
+cd sandbox
 docker-compose up -d
+cd ..
 ```
 
 Run the tests:
@@ -76,7 +71,8 @@ pnpm test
 ```
 
 The tests will connect to `localhost:2222` with credentials `dev:dev` and
-execute real commands over SSH.
+execute real commands over SSH. Test fixtures are available at
+`/home/dev/fixtures` in the container.
 
 ### Building
 
@@ -99,18 +95,21 @@ pnpm lint
 Stop the container:
 
 ```bash
+cd sandbox
 docker-compose down
 ```
 
 View logs:
 
 ```bash
+cd sandbox
 docker-compose logs -f
 ```
 
 Rebuild after Dockerfile changes:
 
 ```bash
+cd sandbox
 docker-compose up -d --build
 ```
 

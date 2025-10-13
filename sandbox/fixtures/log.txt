@@ -1,0 +1,13 @@
+[2024-01-01 10:00:00] INFO: Application started
+[2024-01-01 10:00:01] INFO: Connected to database
+[2024-01-01 10:05:23] WARNING: High memory usage detected
+[2024-01-01 10:06:15] ERROR: Failed to connect to external API
+[2024-01-01 10:06:16] INFO: Retrying connection...
+[2024-01-01 10:06:20] ERROR: Connection timeout
+[2024-01-01 10:06:25] INFO: Fallback to cached data
+[2024-01-01 10:10:00] INFO: Request processed successfully
+[2024-01-01 10:15:30] WARNING: Slow query detected
+[2024-01-01 10:20:45] ERROR: Database connection lost
+[2024-01-01 10:20:46] INFO: Attempting to reconnect...
+[2024-01-01 10:20:50] INFO: Connection restored
+

@@ -17,5 +17,5 @@
     }
   },
   "include": ["src", "example"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist", "sandbox"]
 }

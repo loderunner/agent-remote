@@ -1,0 +1,8 @@
+This is a deeply nested file.
+It contains some test data.
+Line three has an ERROR message.
+Line four is normal.
+Another ERROR on line five.
+Some more content here.
+Final line with TODO item.
+

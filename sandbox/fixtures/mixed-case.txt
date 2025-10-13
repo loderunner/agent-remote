@@ -1,0 +1,7 @@
+This file contains UPPERCASE words.
+Some lines have lowercase words.
+MixedCase words are also present.
+The word ERROR is in capitals.
+But error can also be lowercase.
+And ErRoR can be mixed case too.
+
