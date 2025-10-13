@@ -54,16 +54,28 @@ export async function connect(sshConfig: ConnectConfig) {
           'Executes a bash command in a persistent shell session with optional timeout. For terminal operations like git, npm, docker, etc. DO NOT use for file operations - use specialized tools instead.',
         inputSchema: bashInputSchema.shape,
         handler: async (input: BashInput) => {
-          const output = await bashTool.execute(input);
-          return {
-            content: [
-              {
-                type: 'text',
-                text: output.output,
-              },
-            ],
-            structuredContent: output,
-          };
+          try {
+            const output = await bashTool.execute(input);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: output.output,
+                },
+              ],
+              structuredContent: output,
+            };
+          } catch (error) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Failed to execute bash command: ${error instanceof Error ? error.message : String(error)}`,
+                },
+              ],
+              isError: true,
+            };
+          }
         },
       }),
       tool({
@@ -72,16 +84,28 @@ export async function connect(sshConfig: ConnectConfig) {
           'Retrieves output from a running or completed background bash shell. Takes a shell_id parameter identifying the shell. Always returns only new output since the last check. Returns command output along with shell status.',
         inputSchema: bashOutputInputSchema.shape,
         handler: async (input: BashOutputInput) => {
-          const output = await bashTool.getOutput(input);
-          return {
-            content: [
-              {
-                type: 'text',
-                text: output.output,
-              },
-            ],
-            structuredContent: output,
-          };
+          try {
+            const output = await bashTool.getOutput(input);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: output.output,
+                },
+              ],
+              structuredContent: output,
+            };
+          } catch (error) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Failed to retrieve bash output: ${error instanceof Error ? error.message : String(error)}`,
+                },
+              ],
+              isError: true,
+            };
+          }
         },
       }),
       tool({
@@ -90,16 +114,28 @@ export async function connect(sshConfig: ConnectConfig) {
           'Kills a running background shell by its ID. Takes a shell_id parameter identifying the shell to kill, and an optional signal parameter to send to the shell. Returns a success or failure status.',
         inputSchema: killShellInputSchema.shape,
         handler: async (input: KillShellInput) => {
-          const output = await bashTool.killShell(input);
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Shell ${input.shell_id} ${output.killed ? 'killed' : 'not found'}`,
-              },
-            ],
-            structuredContent: output,
-          };
+          try {
+            const output = await bashTool.killShell(input);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Shell ${input.shell_id} ${output.killed ? 'killed' : 'not found'}`,
+                },
+              ],
+              structuredContent: output,
+            };
+          } catch (error) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Failed to kill bash shell: ${error instanceof Error ? error.message : String(error)}`,
+                },
+              ],
+              isError: true,
+            };
+          }
         },
       }),
     ],
