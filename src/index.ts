@@ -1,6 +1,6 @@
-import { ToolCallback } from '@modelcontextprotocol/sdk/server/mcp';
+import { CallToolResult } from '@modelcontextprotocol/sdk/types';
 import { Client, ConnectConfig } from 'ssh2';
-import { ZodRawShape } from 'zod';
+import z, { ZodRawShape, ZodTypeAny } from 'zod';
 
 import {
   BashInput,
@@ -11,12 +11,17 @@ import {
   bashOutputInputSchema,
   killShellInputSchema,
 } from './bash';
+import { GrepInput, GrepTool, grepInputSchema } from './grep';
+
+type ToolHandler<InputArgs extends ZodRawShape> = (
+  input: z.objectOutputType<InputArgs, ZodTypeAny>,
+) => CallToolResult | Promise<CallToolResult>;
 
 type ToolDefinition<InputArgs extends ZodRawShape> = {
   name: string;
   description: string;
   inputSchema: InputArgs;
-  handler: ToolCallback<InputArgs>;
+  handler: ToolHandler<InputArgs>;
 };
 
 function tool<InputArgs extends ZodRawShape>(
@@ -41,6 +46,7 @@ export async function connect(sshConfig: ConnectConfig) {
   });
 
   const bashTool = new BashTool(client);
+  const grepTool = new GrepTool(client);
 
   return {
     disconnect: () => {
@@ -138,6 +144,44 @@ export async function connect(sshConfig: ConnectConfig) {
           }
         },
       }),
-    ],
+      tool({
+        name: 'grep',
+        description:
+          'Searches for a pattern in a file or directory. Takes a pattern parameter to search for, and an optional path parameter to search in. Returns a list of files that match the pattern.',
+        inputSchema: grepInputSchema.shape,
+        handler: async (input: GrepInput) => {
+          try {
+            const output = await grepTool.grep(input);
+            let text = '';
+            if (output.mode === 'content') {
+              text = output.content;
+            } else if (output.mode === 'files_with_matches') {
+              text = `Found ${output.numFiles} files\n${output.filenames.join('\n')}`;
+            } else if (output.mode === 'count') {
+              text = `Found ${output.numMatches} matches`;
+            }
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text,
+                },
+              ],
+              structuredContent: output,
+            };
+          } catch (error) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Failed to grep: ${error instanceof Error ? error.message : String(error)}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+        },
+      }),
+    ] as const,
   };
 }

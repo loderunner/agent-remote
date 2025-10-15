@@ -7,38 +7,26 @@ const { tools, disconnect } = await connect({
   password: 'dev',
 });
 
-const { shellId } = await tools[0].handler({
-  command: 'nc -lk 6060',
-  run_in_background: true,
+const output = await tools[3].handler({
+  pattern: 'error',
+  path: '/home/dev/fixtures',
+  output_mode: 'content',
 });
 
-await new Promise((resolve) => setTimeout(resolve, 5000));
+console.log(output.content[0].text);
 
-let { stdout, stderr, status, exitCode, signal } = await tools[1].handler({
-  shell_id: shellId!,
-});
-
-console.log(`stdout:\n${stdout}`);
-console.log(`stderr:\n${stderr}`);
-console.log(`status: ${status}`);
-console.log(`exitCode: ${exitCode}`);
-console.log(`signal: ${signal}`);
-console.log('--------------------------------');
-
-const { killed } = await tools[2].handler({
-  shell_id: shellId!,
-});
-console.log(`killed: ${killed}`);
-console.log('--------------------------------');
-
-({ stdout, stderr, status, exitCode, signal } = await tools[1].handler({
-  shell_id: shellId!,
-}));
-
-console.log(`stdout:\n${stdout}`);
-console.log(`stderr:\n${stderr}`);
-console.log(`status: ${status}`);
-console.log(`exitCode: ${exitCode}`);
-console.log(`signal: ${signal}`);
+const choice: 'yes' | 'no' | undefined =
+  Math.random() > 0.9 ? 'yes' : Math.random() > 0.9 ? 'no' : undefined;
+switch (choice) {
+  case 'yes':
+    console.log('yes');
+    break;
+  case 'no':
+    console.log('no');
+    break;
+  default:
+    console.log('default');
+    break;
+}
 
 disconnect();

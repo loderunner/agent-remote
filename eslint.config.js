@@ -12,7 +12,16 @@ export default [
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
   pluginJs.configs.recommended,
-  ...tseslint.configs.recommended,
+  ...tseslint.configs.recommendedTypeChecked,
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: ['eslint.config.js'],
+        },
+      },
+    },
+  },
   {
     rules: {
       '@typescript-eslint/no-unused-vars': [
@@ -28,6 +37,12 @@ export default [
         },
       ],
       '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/switch-exhaustiveness-check': [
+        'warn',
+        { considerDefaultExhaustiveForUnions: true },
+      ],
+      '@typescript-eslint/prefer-nullish-coalescing': 'error',
+      '@typescript-eslint/prefer-promise-reject-errors': 'off',
     },
   },
   {
