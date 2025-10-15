@@ -173,9 +173,9 @@ type Shell = BashOutputOutput & {
 
 async function flush(shell: ClientChannel): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 200));
-  let buf: Buffer;
+  let buf: Buffer | null;
   do {
-    buf = shell.stdout.read();
+    buf = shell.stdout.read() as Buffer | null;
   } while (buf !== null && buf.length > 0);
 }
 
@@ -361,7 +361,7 @@ export class BashTool {
       if (!shell) {
         throw new Error('Shell not found');
       }
-      this.killShell({ shell_id: shellId });
+      void this.killShell({ shell_id: shellId });
     });
 
     channel.write(input.command + '\n');
@@ -369,7 +369,7 @@ export class BashTool {
     return { output: '', shellId };
   }
 
-  public async getOutput(input: BashOutputInput): Promise<BashOutputOutput> {
+  public getOutput(input: BashOutputInput): Promise<BashOutputOutput> {
     const shell = this.shells.get(input.shell_id);
     if (!shell) {
       throw new Error('Shell not found');
@@ -383,12 +383,12 @@ export class BashTool {
         .join('\n');
     }
     shell.output = '';
-    return {
+    return Promise.resolve({
       output,
       status: shell.status,
       exitCode: shell.exitCode,
       signal: shell.signal,
-    };
+    });
   }
 
   public async killShell(input: KillShellInput): Promise<KillShellOutput> {
