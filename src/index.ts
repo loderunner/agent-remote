@@ -1,5 +1,5 @@
 import { CallToolResult } from '@modelcontextprotocol/sdk/types';
-import { Client, ConnectConfig } from 'ssh2';
+import { Client, ConnectConfig, SFTPWrapper } from 'ssh2';
 import z, { ZodRawShape, ZodTypeAny } from 'zod';
 
 import {
@@ -11,6 +11,13 @@ import {
   bashOutputInputSchema,
   killShellInputSchema,
 } from './bash';
+import {
+  FileReadInput,
+  FileTool,
+  FileWriteInput,
+  fileReadInputSchema,
+  fileWriteInputSchema,
+} from './file';
 import { GrepInput, GrepTool, grepInputSchema } from './grep';
 
 type ToolHandler<InputArgs extends ZodRawShape> = (
@@ -47,6 +54,17 @@ export async function connect(sshConfig: ConnectConfig) {
 
   const bashTool = new BashTool(client);
   const grepTool = new GrepTool(client);
+
+  const sftp = await new Promise<SFTPWrapper>((resolve, reject) => {
+    client.sftp((err, sftp) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(sftp);
+    });
+  });
+  const fileTool = new FileTool(sftp);
 
   return {
     disconnect: () => {
@@ -175,6 +193,74 @@ export async function connect(sshConfig: ConnectConfig) {
                 {
                   type: 'text',
                   text: `Failed to grep: ${error instanceof Error ? error.message : String(error)}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+        },
+      }),
+      tool({
+        name: 'read',
+        description:
+          'Reads a file from the filesystem. Takes an absolute file path and optional offset/limit parameters for partial reads. Returns content with line numbers in cat -n format.',
+        inputSchema: fileReadInputSchema.shape,
+        handler: async (input: FileReadInput) => {
+          try {
+            const output = await fileTool.read(input);
+            const lines = output.content.split('\n');
+            const maxLineNumber = output.startLine + lines.length - 1;
+            const padding = maxLineNumber.toString().length;
+            const numberedLines = lines.map((line, index) => {
+              const lineNumber = output.startLine + index;
+              return `${lineNumber.toString().padStart(padding)}\t${line}`;
+            });
+            const text = numberedLines.join('\n');
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text,
+                },
+              ],
+              structuredContent: output,
+            };
+          } catch (error) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Failed to read file: ${error instanceof Error ? error.message : String(error)}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+        },
+      }),
+      tool({
+        name: 'write',
+        description:
+          'Writes content to a file on the filesystem. Takes an absolute file path and content to write. Creates or overwrites the file.',
+        inputSchema: fileWriteInputSchema.shape,
+        handler: async (input: FileWriteInput) => {
+          try {
+            const output = await fileTool.write(input);
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Successfully wrote to ${input.file_path}`,
+                },
+              ],
+              structuredContent: output,
+            };
+          } catch (error) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Failed to write file: ${error instanceof Error ? error.message : String(error)}`,
                 },
               ],
               isError: true,
