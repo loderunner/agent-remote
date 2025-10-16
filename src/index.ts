@@ -1,7 +1,7 @@
-import { CallToolResult } from '@modelcontextprotocol/sdk/types';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types';
 import { formatPatch } from 'diff';
 import { Client, ConnectConfig, SFTPWrapper } from 'ssh2';
-import z, { ZodRawShape, ZodTypeAny } from 'zod';
+import type { ZodRawShape } from 'zod';
 
 import {
   BashInput,
@@ -24,22 +24,12 @@ import {
 import { GlobInput, GlobTool, globInputSchema } from './glob';
 import { GrepInput, GrepTool, grepInputSchema } from './grep';
 
-type ToolHandler<InputArgs extends ZodRawShape> = (
-  input: z.objectOutputType<InputArgs, ZodTypeAny>,
-) => CallToolResult | Promise<CallToolResult>;
-
-type ToolDefinition<InputArgs extends ZodRawShape> = {
+export type RemoteTool<TInput = unknown> = {
   name: string;
   description: string;
-  inputSchema: InputArgs;
-  handler: ToolHandler<InputArgs>;
+  inputSchema: ZodRawShape;
+  handler: (input: TInput) => Promise<CallToolResult>;
 };
-
-function tool<InputArgs extends ZodRawShape>(
-  definition: ToolDefinition<InputArgs>,
-): ToolDefinition<InputArgs> {
-  return definition;
-}
 
 /**
  * Connects to a remote SSH server and returns tool for remote execution
@@ -76,8 +66,8 @@ export async function connect(sshConfig: ConnectConfig) {
       sftp.end();
       client.end();
     },
-    tools: [
-      tool({
+    tools: {
+      bash: {
         name: 'bash',
         description:
           'Executes a bash command in a persistent shell session with optional timeout. For terminal operations like git, npm, docker, etc. DO NOT use for file operations - use specialized tools instead.',
@@ -106,8 +96,8 @@ export async function connect(sshConfig: ConnectConfig) {
             };
           }
         },
-      }),
-      tool({
+      },
+      'bash-output': {
         name: 'bash-output',
         description:
           'Retrieves output from a running or completed background bash shell. Takes a shell_id parameter identifying the shell. Always returns only new output since the last check. Returns command output along with shell status.',
@@ -136,8 +126,8 @@ export async function connect(sshConfig: ConnectConfig) {
             };
           }
         },
-      }),
-      tool({
+      },
+      'kill-bash': {
         name: 'kill-bash',
         description:
           'Kills a running background shell by its ID. Takes a shell_id parameter identifying the shell to kill, and an optional signal parameter to send to the shell. Returns a success or failure status.',
@@ -166,8 +156,8 @@ export async function connect(sshConfig: ConnectConfig) {
             };
           }
         },
-      }),
-      tool({
+      },
+      grep: {
         name: 'grep',
         description:
           'Searches for a pattern in a file or directory. Takes a pattern parameter to search for, and an optional path parameter to search in. Returns a list of files that match the pattern.',
@@ -204,8 +194,8 @@ export async function connect(sshConfig: ConnectConfig) {
             };
           }
         },
-      }),
-      tool({
+      },
+      read: {
         name: 'read',
         description:
           'Reads a file from the filesystem. Takes an absolute file path and optional offset/limit parameters for partial reads. Returns content with line numbers in cat -n format.',
@@ -242,8 +232,8 @@ export async function connect(sshConfig: ConnectConfig) {
             };
           }
         },
-      }),
-      tool({
+      },
+      write: {
         name: 'write',
         description:
           'Writes content to a file on the filesystem. Takes an absolute file path and content to write. Creates or overwrites the file.',
@@ -272,8 +262,8 @@ export async function connect(sshConfig: ConnectConfig) {
             };
           }
         },
-      }),
-      tool({
+      },
+      edit: {
         name: 'edit',
         description:
           'Edits a file by replacing text. Takes an absolute file path, old_string to find, new_string to replace with, and optional replace_all flag. Returns a unified diff of the changes.',
@@ -309,8 +299,8 @@ export async function connect(sshConfig: ConnectConfig) {
             };
           }
         },
-      }),
-      tool({
+      },
+      glob: {
         name: 'glob',
         description:
           'Searches for files matching a glob pattern. Takes an absolute base path and a glob pattern supporting modern features like brace expansion, globstar (**), and POSIX character classes. Returns a list of matching file paths.',
@@ -340,7 +330,7 @@ export async function connect(sshConfig: ConnectConfig) {
             };
           }
         },
-      }),
-    ] as const,
+      },
+    },
   };
 }
