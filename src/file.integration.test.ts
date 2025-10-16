@@ -48,9 +48,7 @@ describe('Integration Tests', () => {
 
     afterAll(() => {
       sftp.end();
-      sftp.destroy();
       client.end();
-      client.destroy();
     });
 
     describe('FileRead', () => {

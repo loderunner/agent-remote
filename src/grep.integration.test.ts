@@ -30,7 +30,6 @@ describe('Integration Tests', () => {
 
     afterAll(() => {
       client.end();
-      client.destroy();
     });
 
     describe('Output Mode: files_with_matches (default)', () => {

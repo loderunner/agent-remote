@@ -31,7 +31,6 @@ describe('Integration Tests', () => {
 
       afterAll(() => {
         client.end();
-        client.destroy();
       });
 
       it('should execute a simple command in background and return shellId', async () => {

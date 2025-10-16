@@ -21,6 +21,7 @@ import {
   fileReadInputSchema,
   fileWriteInputSchema,
 } from './file';
+import { GlobInput, GlobTool, globInputSchema } from './glob';
 import { GrepInput, GrepTool, grepInputSchema } from './grep';
 
 type ToolHandler<InputArgs extends ZodRawShape> = (
@@ -57,6 +58,7 @@ export async function connect(sshConfig: ConnectConfig) {
 
   const bashTool = new BashTool(client);
   const grepTool = new GrepTool(client);
+  const globTool = new GlobTool(client);
 
   const sftp = await new Promise<SFTPWrapper>((resolve, reject) => {
     client.sftp((err, sftp) => {
@@ -274,7 +276,7 @@ export async function connect(sshConfig: ConnectConfig) {
       tool({
         name: 'edit',
         description:
-          'Edits a file by replacing text. Takes an absolute file path, old_string to find, new_string to replace with, and optional replace_all flag. Returns the number of replacements made along with a unified diff.',
+          'Edits a file by replacing text. Takes an absolute file path, old_string to find, new_string to replace with, and optional replace_all flag. Returns a unified diff of the changes.',
         inputSchema: fileEditInputSchema.shape,
         handler: async (input: FileEditInput) => {
           try {
@@ -301,6 +303,37 @@ export async function connect(sshConfig: ConnectConfig) {
                 {
                   type: 'text',
                   text: `Failed to edit file: ${error instanceof Error ? error.message : String(error)}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+        },
+      }),
+      tool({
+        name: 'glob',
+        description:
+          'Searches for files matching a glob pattern. Takes an absolute base path and a glob pattern supporting modern features like brace expansion, globstar (**), and POSIX character classes. Returns a list of matching file paths.',
+        inputSchema: globInputSchema.shape,
+        handler: async (input: GlobInput) => {
+          try {
+            const output = await globTool.glob(input);
+            const text = `Found ${output.count} match${output.count === 1 ? '' : 'es'}\n${output.matches.join('\n')}`;
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text,
+                },
+              ],
+              structuredContent: output,
+            };
+          } catch (error) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Failed to glob: ${error instanceof Error ? error.message : String(error)}`,
                 },
               ],
               isError: true,
