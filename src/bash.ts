@@ -369,7 +369,7 @@ export class BashTool {
     return { output: '', shellId };
   }
 
-  public getOutput(input: BashOutputInput): Promise<BashOutputOutput> {
+  public async getOutput(input: BashOutputInput): Promise<BashOutputOutput> {
     const shell = this.shells.get(input.shell_id);
     if (!shell) {
       throw new Error('Shell not found');
@@ -383,12 +383,12 @@ export class BashTool {
         .join('\n');
     }
     shell.output = '';
-    return Promise.resolve({
+    return {
       output,
       status: shell.status,
       exitCode: shell.exitCode,
       signal: shell.signal,
-    });
+    };
   }
 
   public async killShell(input: KillShellInput): Promise<KillShellOutput> {

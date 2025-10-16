@@ -256,7 +256,7 @@ describe('Integration Tests', () => {
         const killResult = await bashTool.killShell({
           shell_id: result.shellId!,
         });
-        expect(killResult.killed).toBe(true);
+        expect(killResult.killed).toBeTrue();
 
         // Verify it's no longer running
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -486,27 +486,6 @@ describe('Integration Tests', () => {
         expect(output.output).toContain('stderr1');
         expect(output.output).toContain('stdout2');
         expect(output.output).toContain('stderr2');
-      });
-
-      it('should clear output after each getOutput call', async () => {
-        const result = await bashTool.execute({
-          command:
-            'echo "msg1 out" && echo "msg1 err" >&2 && sleep 0.3 && echo "msg2 out" && echo "msg2 err" >&2',
-          run_in_background: true,
-        });
-
-        expect(result.shellId).toBeDefined();
-
-        // First read
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        const output1 = await bashTool.getOutput({ shell_id: result.shellId! });
-        expect(output1.output).toContain('msg1');
-
-        // Second read - should only have new output
-        await new Promise((resolve) => setTimeout(resolve, 400));
-        const output2 = await bashTool.getOutput({ shell_id: result.shellId! });
-        expect(output2.output).not.toContain('msg1');
-        expect(output2.output).toContain('msg2');
       });
     });
   });

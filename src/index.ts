@@ -1,4 +1,5 @@
 import { CallToolResult } from '@modelcontextprotocol/sdk/types';
+import { formatPatch } from 'diff';
 import { Client, ConnectConfig, SFTPWrapper } from 'ssh2';
 import z, { ZodRawShape, ZodTypeAny } from 'zod';
 
@@ -12,9 +13,11 @@ import {
   killShellInputSchema,
 } from './bash';
 import {
+  FileEditInput,
   FileReadInput,
   FileTool,
   FileWriteInput,
+  fileEditInputSchema,
   fileReadInputSchema,
   fileWriteInputSchema,
 } from './file';
@@ -68,8 +71,8 @@ export async function connect(sshConfig: ConnectConfig) {
 
   return {
     disconnect: () => {
+      sftp.end();
       client.end();
-      client.destroy();
     },
     tools: [
       tool({
@@ -261,6 +264,43 @@ export async function connect(sshConfig: ConnectConfig) {
                 {
                   type: 'text',
                   text: `Failed to write file: ${error instanceof Error ? error.message : String(error)}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+        },
+      }),
+      tool({
+        name: 'edit',
+        description:
+          'Edits a file by replacing text. Takes an absolute file path, old_string to find, new_string to replace with, and optional replace_all flag. Returns the number of replacements made along with a unified diff.',
+        inputSchema: fileEditInputSchema.shape,
+        handler: async (input: FileEditInput) => {
+          try {
+            const output = await fileTool.edit(input);
+            let text = `Made ${output.replacements} replacement${output.replacements === 1 ? '' : 's'} in ${input.file_path}`;
+
+            if (output.diff.hunks.length > 0) {
+              text += '\n\n';
+              text += formatPatch(output.diff).split('\n').slice(2).join('\n');
+            }
+
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text,
+                },
+              ],
+              structuredContent: output,
+            };
+          } catch (error) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Failed to edit file: ${error instanceof Error ? error.message : String(error)}`,
                 },
               ],
               isError: true,

@@ -37,8 +37,7 @@ describe('Unit Tests', () => {
           output_mode: 'content',
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r "ERROR" "/home/dev/fixtures"',
           expect.any(Function),
         );
@@ -55,8 +54,7 @@ describe('Unit Tests', () => {
           output_mode: 'content',
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r --include "*.js" "TODO" "/home/dev/code"',
           expect.any(Function),
         );
@@ -72,8 +70,7 @@ describe('Unit Tests', () => {
           output_mode: 'files_with_matches',
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r -l "ERROR" "/home/dev"',
           expect.any(Function),
         );
@@ -90,8 +87,7 @@ describe('Unit Tests', () => {
           '-B': 3,
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r -B 3 "ERROR" "/home/dev"',
           expect.any(Function),
         );
@@ -108,8 +104,7 @@ describe('Unit Tests', () => {
           '-A': 2,
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r -A 2 "ERROR" "/home/dev"',
           expect.any(Function),
         );
@@ -126,8 +121,7 @@ describe('Unit Tests', () => {
           '-C': 5,
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r -C 5 "ERROR" "/home/dev"',
           expect.any(Function),
         );
@@ -144,8 +138,7 @@ describe('Unit Tests', () => {
           '-n': true,
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r -n "ERROR" "/home/dev"',
           expect.any(Function),
         );
@@ -165,8 +158,7 @@ describe('Unit Tests', () => {
           '-n': true,
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r -l "ERROR" "/home/dev"',
           expect.any(Function),
         );
@@ -183,8 +175,7 @@ describe('Unit Tests', () => {
           '-i': true,
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r -i "error" "/home/dev"',
           expect.any(Function),
         );
@@ -201,8 +192,7 @@ describe('Unit Tests', () => {
           head_limit: 10,
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r "ERROR" "/home/dev" | head -10',
           expect.any(Function),
         );
@@ -218,8 +208,7 @@ describe('Unit Tests', () => {
           output_mode: 'count',
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r "ERROR" "/home/dev" | wc -l',
           expect.any(Function),
         );
@@ -236,8 +225,7 @@ describe('Unit Tests', () => {
           head_limit: 5,
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r "ERROR" "/home/dev" | head -5 | wc -l',
           expect.any(Function),
         );
@@ -258,8 +246,7 @@ describe('Unit Tests', () => {
           '-i': true,
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r --include "*.ts" -B 2 -A 3 -n -i "todo" "/home/dev/code"',
           expect.any(Function),
         );
@@ -280,8 +267,7 @@ describe('Unit Tests', () => {
           head_limit: 20,
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r --include "*.py" -C 4 -n -i "debug" "/home/dev" | head -20',
           expect.any(Function),
         );
@@ -301,8 +287,7 @@ describe('Unit Tests', () => {
           head_limit: 10.5,
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r -B 3 -A 2 -C 5 "ERROR" "/home/dev" | head -10',
           expect.any(Function),
         );
@@ -318,8 +303,7 @@ describe('Unit Tests', () => {
           output_mode: 'content',
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r "^ERROR.*$" "/var/log"',
           expect.any(Function),
         );
@@ -336,8 +320,7 @@ describe('Unit Tests', () => {
           '-n': false,
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r "ERROR" "/home/dev"',
           expect.any(Function),
         );
@@ -354,8 +337,7 @@ describe('Unit Tests', () => {
           '-i': false,
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r "ERROR" "/home/dev"',
           expect.any(Function),
         );
@@ -370,8 +352,7 @@ describe('Unit Tests', () => {
           path: '/home/dev',
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r -l "ERROR" "/home/dev"',
           expect.any(Function),
         );
@@ -387,8 +368,7 @@ describe('Unit Tests', () => {
           output_mode: 'content',
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r "ERROR" "/home/dev/my folder"',
           expect.any(Function),
         );
@@ -404,8 +384,7 @@ describe('Unit Tests', () => {
           output_mode: 'content',
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r "error message" "/var/log"',
           expect.any(Function),
         );
@@ -421,8 +400,7 @@ describe('Unit Tests', () => {
           output_mode: 'content',
         });
 
-        expect(client.exec).toHaveBeenCalledOnce();
-        expect(client.exec).toHaveBeenCalledWith(
+        expect(client.exec).toHaveBeenCalledExactlyOnceWith(
           'grep -r "error \\"critical\\" message" "/var/log"',
           expect.any(Function),
         );

@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 
 import { Client, SFTPWrapper } from 'ssh2';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
 import { FileTool } from './file';
 
@@ -262,6 +262,218 @@ describe('Integration Tests', () => {
         expect(finalRead.content).toBe(originalRead.content);
         expect(finalRead.numLines).toBe(originalRead.numLines);
         expect(finalRead.totalLines).toBe(originalRead.totalLines);
+      });
+    });
+
+    describe('FileEdit', () => {
+      const simpleFilePath = '/home/dev/fixtures/simple.txt';
+      const logFilePath = '/home/dev/fixtures/log.txt';
+      const appFilePath = '/home/dev/fixtures/code/app.js';
+      const configFilePath = '/home/dev/fixtures/code/config.py';
+
+      let originalSimpleContent: string;
+      let originalLogContent: string;
+      let originalAppContent: string;
+      let originalConfigContent: string;
+
+      beforeAll(async () => {
+        // Store original contents
+        const simpleRead = await fileTool.read({ file_path: simpleFilePath });
+        originalSimpleContent = simpleRead.content;
+
+        const logRead = await fileTool.read({ file_path: logFilePath });
+        originalLogContent = logRead.content;
+
+        const appRead = await fileTool.read({ file_path: appFilePath });
+        originalAppContent = appRead.content;
+
+        const configRead = await fileTool.read({ file_path: configFilePath });
+        originalConfigContent = configRead.content;
+      });
+
+      afterEach(async () => {
+        // Restore original contents
+        await fileTool.write({
+          file_path: simpleFilePath,
+          content: originalSimpleContent,
+        });
+        await fileTool.write({
+          file_path: logFilePath,
+          content: originalLogContent,
+        });
+        await fileTool.write({
+          file_path: appFilePath,
+          content: originalAppContent,
+        });
+        await fileTool.write({
+          file_path: configFilePath,
+          content: originalConfigContent,
+        });
+      });
+
+      it('should replace first occurrence only', async () => {
+        const result = await fileTool.edit({
+          file_path: simpleFilePath,
+          old_string: 'Line',
+          new_string: 'Modified',
+          replace_all: false,
+        });
+
+        expect(result.replacements).toBe(1);
+        expect(result.diff.hunks.length).toBe(1);
+
+        const readResult = await fileTool.read({ file_path: simpleFilePath });
+        expect(readResult.content).toContain('Modified 1: Hello World');
+        expect(readResult.content).toContain('Line 2: This is a test');
+      });
+
+      it('should replace all occurrences', async () => {
+        const result = await fileTool.edit({
+          file_path: simpleFilePath,
+          old_string: 'Line',
+          new_string: 'Row',
+          replace_all: true,
+        });
+
+        expect(result.replacements).toBe(5);
+        expect(result.diff.hunks.length).toBe(1);
+
+        const readResult = await fileTool.read({ file_path: simpleFilePath });
+        expect(readResult.content).not.toContain('Line');
+        expect(readResult.content).toContain('Row 1: Hello World');
+        expect(readResult.content).toContain('Row 2: This is a test');
+      });
+
+      it('should return zero replacements when no match found', async () => {
+        const result = await fileTool.edit({
+          file_path: simpleFilePath,
+          old_string: 'NOTFOUND',
+          new_string: 'CHANGED',
+          replace_all: false,
+        });
+
+        expect(result.replacements).toBe(0);
+        expect(result.diff.hunks.length).toBe(0);
+
+        const readResult = await fileTool.read({ file_path: simpleFilePath });
+        expect(readResult.content).toBe(originalSimpleContent);
+      });
+
+      it('should handle multiline string replacements', async () => {
+        const result = await fileTool.edit({
+          file_path: logFilePath,
+          old_string:
+            '[2024-01-01 10:00:01] INFO: Connected to database\n[2024-01-01 10:05:23] WARNING: High memory usage detected',
+          new_string: '[2024-01-01 10:00:01] INFO: Connection established',
+          replace_all: false,
+        });
+
+        expect(result.replacements).toBe(1);
+        expect(result.diff.hunks.length).toBe(1);
+
+        const readResult = await fileTool.read({ file_path: logFilePath });
+        expect(readResult.content).toContain('Connection established');
+        expect(readResult.content).not.toContain('Connected to database');
+        expect(readResult.content).not.toContain('High memory usage detected');
+      });
+
+      it('should handle special characters in strings', async () => {
+        const result = await fileTool.edit({
+          file_path: appFilePath,
+          old_string: "res.send('Hello World!');",
+          new_string: "res.json({ message: 'Hello World!' });",
+          replace_all: false,
+        });
+
+        expect(result.replacements).toBe(1);
+        expect(result.diff.hunks.length).toBe(1);
+
+        const readResult = await fileTool.read({ file_path: appFilePath });
+        expect(readResult.content).toContain(
+          "res.json({ message: 'Hello World!' });",
+        );
+      });
+
+      it('should generate valid diff structure', async () => {
+        const result = await fileTool.edit({
+          file_path: simpleFilePath,
+          old_string: 'Line 3: Searching for patterns',
+          new_string: 'Line 3: Modified pattern search',
+          replace_all: false,
+        });
+
+        expect(result.replacements).toBe(1);
+        expect(result.diff.hunks.length).toBe(1);
+
+        const hunk = result.diff.hunks[0];
+        expect(hunk.oldStart).toBeGreaterThan(0);
+        expect(hunk.newStart).toBeGreaterThan(0);
+        expect(hunk.oldLines).toBeGreaterThan(0);
+        expect(hunk.newLines).toBeGreaterThan(0);
+        expect(hunk.lines.length).toBeGreaterThan(0);
+
+        // Check that we have removed and added lines (prefixed with - and +)
+        expect(hunk.lines).toSatisfyAny((l: string) => l.startsWith('-'));
+        expect(hunk.lines).toSatisfyAny((l: string) => l.startsWith('+'));
+      });
+
+      it('should generate diff with multiple hunks', async () => {
+        const result = await fileTool.edit({
+          file_path: configFilePath,
+          old_string: 'DATABASE',
+          new_string: 'DB',
+          replace_all: true,
+        });
+
+        expect(result.replacements).toBe(5);
+        expect(result.diff.hunks.length).toBeGreaterThan(1);
+
+        for (const hunk of result.diff.hunks) {
+          expect(hunk.oldStart).toBeGreaterThan(0);
+          expect(hunk.newStart).toBeGreaterThan(0);
+          expect(hunk.lines.length).toBeGreaterThan(0);
+        }
+      });
+
+      it('should handle empty string as new_string', async () => {
+        const result = await fileTool.edit({
+          file_path: logFilePath,
+          old_string: 'WARNING: High memory usage detected',
+          new_string: '',
+          replace_all: false,
+        });
+
+        expect(result.replacements).toBe(1);
+
+        const readResult = await fileTool.read({ file_path: logFilePath });
+        expect(readResult.content).not.toContain(
+          'WARNING: High memory usage detected',
+        );
+      });
+
+      it('should handle multiple replacements in same line', async () => {
+        const result = await fileTool.edit({
+          file_path: configFilePath,
+          old_string: 'Config',
+          new_string: 'Settings',
+          replace_all: true,
+        });
+
+        expect(result.replacements).toBe(14);
+
+        const readResult = await fileTool.read({ file_path: configFilePath });
+        expect(readResult.content).toContain('DevelopmentSettings(Settings)');
+      });
+
+      it('should throw error for non-existent file', async () => {
+        await expect(
+          fileTool.edit({
+            file_path: '/home/dev/fixtures/does-not-exist.txt',
+            old_string: 'OLD',
+            new_string: 'NEW',
+            replace_all: false,
+          }),
+        ).rejects.toThrow();
       });
     });
   });

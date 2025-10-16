@@ -1,5 +1,7 @@
 import pluginJs from '@eslint/js';
+import vitest from '@vitest/eslint-plugin';
 import importPlugin from 'eslint-plugin-import';
+import jestExtended from 'eslint-plugin-jest-extended';
 import jsdoc from 'eslint-plugin-jsdoc';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
@@ -17,7 +19,7 @@ export default [
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['eslint.config.js'],
+          allowDefaultProject: ['eslint.config.js', 'rollup.config.js'],
         },
       },
     },
@@ -43,6 +45,7 @@ export default [
       ],
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
       '@typescript-eslint/prefer-promise-reject-errors': 'off',
+      '@typescript-eslint/require-await': 'off',
     },
   },
   {
@@ -79,5 +82,13 @@ export default [
       'jsdoc/no-types': 'warn',
       'jsdoc/require-description': 'warn',
     },
+  },
+  {
+    files: ['**/*.test.ts'],
+    ...vitest.configs.recommended,
+  },
+  {
+    files: ['**/*.test.ts'],
+    ...jestExtended.configs['flat/all'],
   },
 ];

@@ -1,3 +1,4 @@
+import { StructuredPatch, structuredPatch } from 'diff';
 import { SFTPWrapper } from 'ssh2';
 import z, { ZodType } from 'zod';
 
@@ -78,6 +79,50 @@ export type FileWriteOutput = {
   content: string;
 };
 
+export type FileEditInput = {
+  /**
+   * The absolute path to the file to modify
+   */
+  file_path: string;
+  /**
+   * The text to replace
+   */
+  old_string: string;
+  /**
+   * The text to replace it with (must be different from old_string)
+   */
+  new_string: string;
+  /**
+   * Replace all occurences of old_string (default false)
+   */
+  replace_all?: boolean;
+};
+
+export const fileEditInputSchema = z.object({
+  file_path: z.string().describe('The absolute path to the file to modify'),
+  old_string: z.string().describe('The text to replace'),
+  new_string: z
+    .string()
+    .describe(
+      'The text to replace it with (must be different from old_string)',
+    ),
+  replace_all: z
+    .boolean()
+    .optional()
+    .describe('Replace all occurences of old_string (default false)'),
+}) satisfies ZodType<FileEditInput>;
+
+export type FileEditOutput = {
+  /**
+   * The number of replacements made
+   */
+  replacements: number;
+  /**
+   * Structured unified diff patch
+   */
+  diff: StructuredPatch;
+};
+
 export class FileTool {
   constructor(private readonly sftp: SFTPWrapper) {}
 
@@ -133,5 +178,69 @@ export class FileTool {
     return {
       content: input.content,
     };
+  }
+
+  /**
+   * Edits a file by replacing text and generates a unified diff
+   */
+  public async edit(input: FileEditInput): Promise<FileEditOutput> {
+    // Read the file content
+    const oldContent = await new Promise<string>((resolve, reject) => {
+      this.sftp.readFile(input.file_path, 'utf8', (err, data) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(data.toString());
+      });
+    });
+
+    // Count replacements and perform the replacement
+    let replacements = 0;
+    let newContent: string;
+
+    if (input.replace_all) {
+      // Count how many times the string appears
+      const regex = new RegExp(
+        input.old_string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+        'g',
+      );
+      const matches = oldContent.match(regex);
+      replacements = matches ? matches.length : 0;
+      newContent = oldContent.replaceAll(input.old_string, input.new_string);
+    } else {
+      // Replace only the first occurrence
+      if (oldContent.includes(input.old_string)) {
+        replacements = 1;
+        newContent = oldContent.replace(input.old_string, input.new_string);
+      } else {
+        replacements = 0;
+        newContent = oldContent;
+      }
+    }
+
+    // Write back the modified content
+    await new Promise<void>((resolve, reject) => {
+      this.sftp.writeFile(input.file_path, newContent, (err) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve();
+      });
+    });
+
+    // Generate unified diff
+    const diff = structuredPatch(
+      input.file_path,
+      input.file_path,
+      oldContent,
+      newContent,
+      undefined,
+      undefined,
+      { context: 3 },
+    );
+
+    return { replacements, diff };
   }
 }

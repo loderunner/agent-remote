@@ -9,7 +9,7 @@ services:
       - '6060:6060'
     volumes:
       - ./ssh_key.pub:/home/dev/.ssh/authorized_keys:ro
-      - ./fixtures:/home/dev/fixtures:ro
+      - ./fixtures:/home/dev/fixtures
       - dev-home:/home/dev/workspace
       - ssh-host-keys:/etc/ssh
     restart: unless-stopped
