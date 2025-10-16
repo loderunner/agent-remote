@@ -11,11 +11,22 @@ export type GlobInput = {
    * The glob pattern to match files against
    */
   pattern: string;
+  /**
+   * Whether to include hidden files (starting with `.`) in the results
+   * Defaults to false
+   */
+  include_hidden?: boolean;
 };
 
 export const globInputSchema = z.object({
   base_path: z.string().describe('The absolute base path to search from'),
   pattern: z.string().describe('The glob pattern to match files against'),
+  include_hidden: z
+    .boolean()
+    .optional()
+    .describe(
+      'Whether to include hidden files (starting with `.`) in the results. Defaults to false',
+    ),
 }) satisfies ZodType<GlobInput>;
 
 export type GlobOutput = {
@@ -36,10 +47,9 @@ export class GlobTool {
    * Searches for files matching a glob pattern
    * Uses find command with local minimatch filtering for reliable cross-platform behavior
    *
-   * Hidden file behavior:
-   * - Wildcards never match hidden files/directories (starting with .)
-   * - Does not recurse into hidden subdirectories
-   * - Can list entries of explicitly specified hidden directories (e.g., .config/*)
+   * When include_hidden is true:
+   * - Wildcards match hidden files/directories
+   * - Recurses into hidden subdirectories
    */
   public async glob(input: GlobInput): Promise<GlobOutput> {
     const isRecursive = input.pattern.includes('**');
@@ -75,13 +85,14 @@ export class GlobTool {
 
           // Filter files using minimatch
           // Convert absolute paths to relative for matching
-          // Note: dot: false ensures wildcards don't match hidden files
+          // Note: dot option controls whether wildcards match hidden files
           const matches = allFiles.filter((filePath) => {
             const relativePath = filePath.startsWith(input.base_path)
               ? filePath.slice(input.base_path.length + 1)
               : filePath;
             return minimatch(relativePath, input.pattern, {
               matchBase: false,
+              dot: input.include_hidden ?? false,
             });
           });
 

@@ -344,6 +344,106 @@ describe('Integration Tests', () => {
           '/home/dev/fixtures/hidden/.hidden-dir/.hidden-in-hidden.txt',
         );
       });
+
+      describe('with include_hidden', () => {
+        it('should match hidden files with * wildcard', async () => {
+          const result = await globTool.glob({
+            base_path: '/home/dev/fixtures/hidden',
+            pattern: '*',
+            include_hidden: true,
+          });
+
+          // Should match both visible and hidden files
+          expect(result.matches).toIncludeSameMembers([
+            '/home/dev/fixtures/hidden/visible1.txt',
+            '/home/dev/fixtures/hidden/visible2.md',
+            '/home/dev/fixtures/hidden/regular-dir',
+            '/home/dev/fixtures/hidden/.hidden-dir',
+            '/home/dev/fixtures/hidden/.hidden-file1.txt',
+            '/home/dev/fixtures/hidden/.hidden-file2.md',
+          ]);
+          expect(result.count).toBe(6);
+        });
+
+        it('should match hidden txt files with *.txt pattern', async () => {
+          const result = await globTool.glob({
+            base_path: '/home/dev/fixtures/hidden',
+            pattern: '*.txt',
+            include_hidden: true,
+          });
+
+          expect(result.matches).toIncludeSameMembers([
+            '/home/dev/fixtures/hidden/visible1.txt',
+            '/home/dev/fixtures/hidden/.hidden-file1.txt',
+          ]);
+          expect(result.count).toBe(2);
+        });
+
+        it('should recurse into hidden directories with **/*', async () => {
+          const result = await globTool.glob({
+            base_path: '/home/dev/fixtures/hidden',
+            pattern: '**/*',
+            include_hidden: true,
+          });
+
+          // Should find files in all directories including hidden ones
+          expect(result.matches).toIncludeSameMembers([
+            '/home/dev/fixtures/hidden/visible1.txt',
+            '/home/dev/fixtures/hidden/visible2.md',
+            '/home/dev/fixtures/hidden/regular-dir',
+            '/home/dev/fixtures/hidden/regular-dir/visible.txt',
+            '/home/dev/fixtures/hidden/regular-dir/.hidden-in-regular.txt',
+            '/home/dev/fixtures/hidden/regular-dir/.hidden-subdir',
+            '/home/dev/fixtures/hidden/regular-dir/.hidden-subdir/file-in-hidden-sub.txt',
+            '/home/dev/fixtures/hidden/.hidden-file1.txt',
+            '/home/dev/fixtures/hidden/.hidden-file2.md',
+            '/home/dev/fixtures/hidden/.hidden-dir',
+            '/home/dev/fixtures/hidden/.hidden-dir/visible-in-hidden.txt',
+            '/home/dev/fixtures/hidden/.hidden-dir/.hidden-in-hidden.txt',
+            '/home/dev/fixtures/hidden/.hidden-dir/subdir',
+            '/home/dev/fixtures/hidden/.hidden-dir/subdir/nested-visible.txt',
+            '/home/dev/fixtures/hidden/.hidden-dir/subdir/.nested-hidden.txt',
+          ]);
+          expect(result.count).toBe(15);
+        });
+
+        it('should match hidden files in subdirectories with **/*.txt', async () => {
+          const result = await globTool.glob({
+            base_path: '/home/dev/fixtures/hidden',
+            pattern: '**/*.txt',
+            include_hidden: true,
+          });
+
+          expect(result.matches).toIncludeSameMembers([
+            '/home/dev/fixtures/hidden/visible1.txt',
+            '/home/dev/fixtures/hidden/regular-dir/visible.txt',
+            '/home/dev/fixtures/hidden/regular-dir/.hidden-in-regular.txt',
+            '/home/dev/fixtures/hidden/regular-dir/.hidden-subdir/file-in-hidden-sub.txt',
+            '/home/dev/fixtures/hidden/.hidden-file1.txt',
+            '/home/dev/fixtures/hidden/.hidden-dir/visible-in-hidden.txt',
+            '/home/dev/fixtures/hidden/.hidden-dir/.hidden-in-hidden.txt',
+            '/home/dev/fixtures/hidden/.hidden-dir/subdir/nested-visible.txt',
+            '/home/dev/fixtures/hidden/.hidden-dir/subdir/.nested-hidden.txt',
+          ]);
+          expect(result.count).toBe(9);
+        });
+
+        it('should match hidden files in explicitly specified hidden directory', async () => {
+          const result = await globTool.glob({
+            base_path: '/home/dev/fixtures/hidden/.hidden-dir',
+            pattern: '*',
+            include_hidden: true,
+          });
+
+          // Should now include .hidden-in-hidden.txt
+          expect(result.matches).toIncludeSameMembers([
+            '/home/dev/fixtures/hidden/.hidden-dir/visible-in-hidden.txt',
+            '/home/dev/fixtures/hidden/.hidden-dir/.hidden-in-hidden.txt',
+            '/home/dev/fixtures/hidden/.hidden-dir/subdir',
+          ]);
+          expect(result.count).toBe(3);
+        });
+      });
     });
 
     describe('Edge cases', () => {
