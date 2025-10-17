@@ -1,0 +1,21 @@
+{
+  "name": "simple-agent-example",
+  "version": "1.0.0",
+  "description": "Simple example of using @claude-remote/ssh with Claude Agent SDK",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "tsx index.ts",
+    "dev": "tsx watch index.ts",
+    "lint": "echo 'No linting configured for example'"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.37.0",
+    "@claude-remote/ssh": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.20.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.3"
+  }
+}
