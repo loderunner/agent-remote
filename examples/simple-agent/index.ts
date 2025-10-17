@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { readFileSync } from 'fs';
 
-import Anthropic from '@anthropic-ai/sdk';
+import { query } from '@anthropic-ai/claude-agent-sdk';
 import { Remote } from '@claude-remote/ssh';
 
 /**
@@ -10,8 +9,6 @@ import { Remote } from '@claude-remote/ssh';
  *
  * This example connects to a remote SSH server and creates an AI agent
  * that can execute commands, read/write files, and search the filesystem.
- *
- * Note: Some TypeScript strict checks are disabled for simplicity in this example.
  */
 
 type RemoteConfig = {
@@ -66,53 +63,8 @@ async function main() {
   console.log('Connected successfully!\n');
 
   try {
-    // Initialize Anthropic client
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
-
-    // Define tools for Claude API from remote tool definitions
-    const tools: Anthropic.Tool[] = [
-      {
-        name: remote.bash.name,
-        description: remote.bash.description,
-        input_schema: {
-          type: 'object' as const,
-          ...remote.bash.inputSchema,
-        },
-      },
-      {
-        name: remote.read.name,
-        description: remote.read.description,
-        input_schema: {
-          type: 'object' as const,
-          ...remote.read.inputSchema,
-        },
-      },
-      {
-        name: remote.glob.name,
-        description: remote.glob.description,
-        input_schema: {
-          type: 'object' as const,
-          ...remote.glob.inputSchema,
-        },
-      },
-      {
-        name: remote.grep.name,
-        description: remote.grep.description,
-        input_schema: {
-          type: 'object' as const,
-          ...remote.grep.inputSchema,
-        },
-      },
-    ];
-
-    // Map of tool names to handlers
-    const toolHandlers: Map<string, (input: any) => Promise<any>> = new Map();
-    toolHandlers.set(remote.bash.name, remote.bash.handler);
-    toolHandlers.set(remote.read.name, remote.read.handler);
-    toolHandlers.set(remote.glob.name, remote.glob.handler);
-    toolHandlers.set(remote.grep.name, remote.grep.handler);
+    // Create MCP server with all remote tools
+    const mcpServer = remote.createSdkMcpServer();
 
     // Example task: List files and count TypeScript files
     const task = `
@@ -126,88 +78,52 @@ async function main() {
     console.log('Task:', task);
     console.log('\n--- Agent Response ---\n');
 
-    // Create agent conversation
-    const messages: Anthropic.MessageParam[] = [
-      {
-        role: 'user',
-        content: task,
+    // Create agent query with remote tools
+    const agentQuery = query({
+      prompt: task,
+      options: {
+        mcpServers: {
+          'remote-ssh': mcpServer,
+        },
+        model: 'claude-3-5-sonnet-20241022',
+        cwd: '/home/dev',
+        permissionMode: 'bypassPermissions',
       },
-    ];
-
-    let response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 4096,
-      tools,
-      messages,
     });
 
-    // Agent loop: process tool calls and continue conversation
-    while (response.stop_reason === 'tool_use') {
-      console.log('Agent is using tools...\n');
-
-      // Add assistant response to messages
-      messages.push({
-        role: 'assistant',
-        content: response.content,
-      });
-
-      // Execute tool calls
-      const toolResultContent: Anthropic.ToolResultBlockParam[] = [];
-
-      for (const block of response.content) {
-        if (block.type === 'tool_use') {
-          console.log(`Tool: ${block.name}`);
-          console.log(`Input:`, JSON.stringify(block.input, null, 2));
-
-          try {
-            const handler = toolHandlers.get(block.name);
-            if (!handler) {
-              throw new Error(`Unknown tool: ${block.name}`);
-            }
-
-            const result = await handler(block.input);
-
-            toolResultContent.push({
-              type: 'tool_result',
-              tool_use_id: block.id,
-              content: JSON.stringify(result),
-            });
-
-            console.log(`Result: ${JSON.stringify(result).slice(0, 200)}...\n`);
-          } catch (error) {
-            const errorMessage =
-              error instanceof Error ? error.message : String(error);
-            toolResultContent.push({
-              type: 'tool_result',
-              tool_use_id: block.id,
-              content: `Error: ${errorMessage}`,
-              is_error: true,
-            });
-
-            console.log(`Error: ${errorMessage}\n`);
+    // Process agent messages
+    for await (const message of agentQuery) {
+      if (message.type === 'system' && message.subtype === 'init') {
+        console.log(`Model: ${message.model}`);
+        console.log(`Available tools: ${message.tools.join(', ')}`);
+        console.log('');
+      } else if (message.type === 'assistant') {
+        // Display assistant message content
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        for (const content of message.message.content) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          if (content.type === 'text') {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            console.log(`Assistant: ${content.text}`);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          } else if (content.type === 'tool_use') {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            console.log(`\nUsing tool: ${content.name}`);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            console.log(`Input: ${JSON.stringify(content.input, null, 2)}`);
           }
         }
-      }
-
-      messages.push({
-        role: 'user',
-        content: toolResultContent,
-      });
-
-      // Get next response
-      response = await anthropic.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 4096,
-        tools,
-        messages,
-      });
-    }
-
-    // Display final response
-    console.log('--- Final Response ---\n');
-    for (const block of response.content) {
-      if (block.type === 'text') {
-        console.log(block.text);
+        console.log('');
+      } else if (message.type === 'result') {
+        if (message.subtype === 'success') {
+          console.log('\n--- Final Result ---\n');
+          console.log(message.result);
+          console.log(`\nTurns: ${message.num_turns}`);
+          console.log(`Duration: ${message.duration_ms}ms`);
+          console.log(`Cost: $${message.total_cost_usd.toFixed(4)}`);
+        } else {
+          console.error(`\nError: ${message.subtype}`);
+        }
       }
     }
   } finally {

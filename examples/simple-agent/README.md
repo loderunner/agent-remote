@@ -1,16 +1,17 @@
 # Simple Agent Example
 
-A simple example demonstrating how to use `@claude-remote/ssh` with the Claude
-Agent SDK to create an AI agent that can interact with remote systems.
+A simple example demonstrating how to use `@claude-remote/ssh` with
+`@anthropic-ai/claude-agent-sdk` to create an AI agent that can interact with
+remote systems.
 
 ## What This Example Does
 
 This example creates an AI agent that:
 
 - Connects to a remote SSH server
-- Has access to remote execution tools (bash, file operations, search)
-- Executes a multi-step task autonomously
-- Uses tool calling to interact with the remote system
+- Registers remote tools as an MCP server
+- Uses the Claude Agent SDK to run autonomous tasks
+- Executes commands, reads files, and searches the filesystem remotely
 
 ## Prerequisites
 
@@ -70,17 +71,20 @@ pnpm start
 
 ## How It Works
 
-The example demonstrates the full agent loop:
+The example demonstrates the Agent SDK workflow:
 
 1. **Connect to Remote**: Establishes SSH connection and SFTP session
-2. **Create MCP Server**: Wraps all remote tools in an MCP server
-3. **Initialize Agent**: Creates Claude conversation with tool access
-4. **Agent Loop**:
+2. **Create MCP Server**: Wraps all remote tools in an MCP server using
+   `remote.createSdkMcpServer()`
+3. **Create Query**: Initializes an agent query with the task and MCP server
+   configuration
+4. **Agent Loop**: The Agent SDK handles the full agentic loop:
    - Claude analyzes the task and decides which tools to use
-   - Tools are executed on the remote system
+   - Tools are executed on the remote system via the MCP server
    - Results are sent back to Claude
    - Process repeats until task is complete
-5. **Cleanup**: Disconnects from remote server
+5. **Stream Messages**: Process messages from the agent as they arrive
+6. **Cleanup**: Disconnects from remote server
 
 ## Example Task
 
@@ -95,11 +99,11 @@ You can modify the `task` variable in `index.ts` to try different tasks.
 
 ## Available Tools
 
-The agent has access to these tools on the remote system:
+The MCP server provides access to these tools on the remote system:
 
 - **bash**: Execute shell commands
-- **bash_output**: Get output from background commands
-- **kill_bash**: Kill running background commands
+- **bash-output**: Get output from background commands
+- **kill-bash**: Kill running background commands
 - **grep**: Search for patterns in files
 - **read**: Read file contents
 - **write**: Write content to files
@@ -108,30 +112,32 @@ The agent has access to these tools on the remote system:
 
 ## Customization
 
-### Using Individual Tools
+### Permission Mode
 
-Instead of using all tools, you can select specific ones:
+The example uses `bypassPermissions` mode for simplicity. In production, you may
+want to use `default` or `ask` mode:
 
 ```typescript
-import { createSdkMcpServer, tool } from '@anthropic-ai/claude-agent-sdk';
+const agentQuery = query({
+  prompt: task,
+  options: {
+    mcpServers: { 'remote-ssh': mcpServer },
+    permissionMode: 'default', // or 'ask'
+  },
+});
+```
 
-const customServer = createSdkMcpServer({
-  name: 'custom-remote',
-  version: '1.0.0',
-  tools: [
-    tool(
-      remote.bash.name,
-      remote.bash.description,
-      remote.bash.inputSchema,
-      remote.bash.handler,
-    ),
-    tool(
-      remote.read.name,
-      remote.read.description,
-      remote.read.inputSchema,
-      remote.read.handler,
-    ),
-  ],
+### Working Directory
+
+You can specify the working directory for the agent:
+
+```typescript
+const agentQuery = query({
+  prompt: task,
+  options: {
+    mcpServers: { 'remote-ssh': mcpServer },
+    cwd: '/path/to/working/directory',
+  },
 });
 ```
 
