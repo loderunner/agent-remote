@@ -20,8 +20,15 @@ export default [
       },
     ],
     plugins: [
-      typescript({ tsconfig: './tsconfig.json', exclude: ['./**/*.test.ts'] }),
+      typescript({
+        tsconfig: './tsconfig.json',
+        exclude: ['**/*.test.ts', './*.ts'],
+        declaration: false,
+        declarationMap: false,
+      }),
     ],
+    // External all dependencies
+    external: /.*/,
   },
   {
     input: 'src/index.ts',

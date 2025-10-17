@@ -19,6 +19,7 @@ export default [
     languageOptions: {
       parserOptions: {
         projectService: {
+          tsconfigRootDir: __dirname,
           allowDefaultProject: ['eslint.config.js', 'rollup.config.js'],
         },
       },

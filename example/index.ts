@@ -5,8 +5,8 @@ import {
 } from '@anthropic-ai/claude-agent-sdk';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types';
 
-import type { RemoteTool } from '../src/index';
-import { connect } from '../src/index';
+import type { RemoteTool } from '@claude-remote/ssh';
+import { connect } from '@claude-remote/ssh';
 
 /**
  * Creates an MCP server with SSH tools adapted for the Agent SDK.

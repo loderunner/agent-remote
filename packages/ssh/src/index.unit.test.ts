@@ -106,9 +106,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const bashTool = tools[0];
 
-      const result = await bashTool.handler({ command: 'echo hello' });
+      const result = await tools.bash.handler({ command: 'echo hello' });
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'command output' }],
@@ -123,9 +122,8 @@ describe('connect function', () => {
       mockBashTool.execute.mockRejectedValue(new Error('Command failed'));
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const bashTool = tools[0];
 
-      const result = await bashTool.handler({ command: 'bad command' });
+      const result = await tools.bash.handler({ command: 'bad command' });
 
       expect(result).toEqual({
         content: [
@@ -150,9 +148,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const bashOutputTool = tools[1];
 
-      const result = await bashOutputTool.handler({ shell_id: 'abc123' });
+      const result = await tools['bash-output'].handler({ shell_id: 'abc123' });
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'background output' }],
@@ -167,9 +164,10 @@ describe('connect function', () => {
       mockBashTool.getOutput.mockRejectedValue(new Error('Shell not found'));
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const bashOutputTool = tools[1];
 
-      const result = await bashOutputTool.handler({ shell_id: 'invalid' });
+      const result = await tools['bash-output'].handler({
+        shell_id: 'invalid',
+      });
 
       expect(result).toEqual({
         content: [
@@ -191,9 +189,8 @@ describe('connect function', () => {
       mockBashTool.killShell.mockResolvedValue({ killed: true });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const killBashTool = tools[2];
 
-      const result = await killBashTool.handler({ shell_id: 'abc123' });
+      const result = await tools['kill-bash'].handler({ shell_id: 'abc123' });
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Shell abc123 killed' }],
@@ -208,9 +205,8 @@ describe('connect function', () => {
       mockBashTool.killShell.mockResolvedValue({ killed: false });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const killBashTool = tools[2];
 
-      const result = await killBashTool.handler({ shell_id: 'invalid' });
+      const result = await tools['kill-bash'].handler({ shell_id: 'invalid' });
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Shell invalid not found' }],
@@ -225,9 +221,8 @@ describe('connect function', () => {
       mockBashTool.killShell.mockRejectedValue(new Error('Failed to signal'));
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const killBashTool = tools[2];
 
-      const result = await killBashTool.handler({ shell_id: 'abc123' });
+      const result = await tools['kill-bash'].handler({ shell_id: 'abc123' });
 
       expect(result).toEqual({
         content: [
@@ -250,9 +245,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const grepTool = tools[3];
 
-      const result = await grepTool.handler({
+      const result = await tools.grep.handler({
         pattern: 'ERROR',
         path: '/var/log',
         output_mode: 'content',
@@ -281,9 +275,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const grepTool = tools[3];
 
-      const result = await grepTool.handler({
+      const result = await tools.grep.handler({
         pattern: 'TODO',
         path: '/src',
         output_mode: 'files_with_matches',
@@ -316,9 +309,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const grepTool = tools[3];
 
-      const result = await grepTool.handler({
+      const result = await tools.grep.handler({
         pattern: 'ERROR',
         path: '/var/log',
         output_mode: 'count',
@@ -339,9 +331,8 @@ describe('connect function', () => {
       mockGrepTool.grep.mockRejectedValue(new Error('Pattern invalid'));
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const grepTool = tools[3];
 
-      const result = await grepTool.handler({
+      const result = await tools.grep.handler({
         pattern: '[',
         path: '/src',
       });
@@ -367,9 +358,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const readTool = tools[4];
 
-      const result = await readTool.handler({ file_path: '/home/test.txt' });
+      const result = await tools.read.handler({ file_path: '/home/test.txt' });
 
       expect(result).toEqual({
         content: [{ type: 'text', text: '1\tline 1\n2\tline 2\n3\tline 3' }],
@@ -394,9 +384,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const readTool = tools[4];
 
-      const result = await readTool.handler({
+      const result = await tools.read.handler({
         file_path: '/home/test.txt',
         offset: 98,
         limit: 2,
@@ -422,9 +411,8 @@ describe('connect function', () => {
       mockFileTool.read.mockRejectedValue(new Error('File not found'));
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const readTool = tools[4];
 
-      const result = await readTool.handler({ file_path: '/invalid.txt' });
+      const result = await tools.read.handler({ file_path: '/invalid.txt' });
 
       expect(result).toEqual({
         content: [
@@ -445,9 +433,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const writeTool = tools[5];
 
-      const result = await writeTool.handler({
+      const result = await tools.write.handler({
         file_path: '/home/test.txt',
         content: 'new content',
       });
@@ -468,9 +455,8 @@ describe('connect function', () => {
       mockFileTool.write.mockRejectedValue(new Error('Permission denied'));
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const writeTool = tools[5];
 
-      const result = await writeTool.handler({
+      const result = await tools.write.handler({
         file_path: '/root/protected.txt',
         content: 'data',
       });
@@ -510,9 +496,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const editTool = tools[6];
 
-      const result = await editTool.handler({
+      const result = await tools.edit.handler({
         file_path: '/home/test.txt',
         old_string: 'old line',
         new_string: 'new line',
@@ -544,9 +529,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const editTool = tools[6];
 
-      const result = await editTool.handler({
+      const result = await tools.edit.handler({
         file_path: '/home/test.txt',
         old_string: 'foo',
         new_string: 'bar',
@@ -577,9 +561,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const editTool = tools[6];
 
-      const result = await editTool.handler({
+      const result = await tools.edit.handler({
         file_path: '/home/test.txt',
         old_string: 'not found',
         new_string: 'replacement',
@@ -599,9 +582,8 @@ describe('connect function', () => {
       mockFileTool.edit.mockRejectedValue(new Error('File locked'));
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const editTool = tools[6];
 
-      const result = await editTool.handler({
+      const result = await tools.edit.handler({
         file_path: '/home/test.txt',
         old_string: 'old',
         new_string: 'new',
@@ -627,9 +609,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const globTool = tools[7];
 
-      const result = await globTool.handler({
+      const result = await tools.glob.handler({
         base_path: '/home/project',
         pattern: '**/*.ts',
       });
@@ -659,9 +640,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const globTool = tools[7];
 
-      const result = await globTool.handler({
+      const result = await tools.glob.handler({
         base_path: '/home',
         pattern: 'single.txt',
       });
@@ -680,9 +660,8 @@ describe('connect function', () => {
       });
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const globTool = tools[7];
 
-      const result = await globTool.handler({
+      const result = await tools.glob.handler({
         base_path: '/home',
         pattern: '*.xyz',
       });
@@ -698,9 +677,8 @@ describe('connect function', () => {
       mockGlobTool.glob.mockRejectedValue(new Error('Invalid pattern'));
 
       const { tools } = await connect({ host: 'localhost', username: 'test' });
-      const globTool = tools[7];
 
-      const result = await globTool.handler({
+      const result = await tools.glob.handler({
         base_path: '/home',
         pattern: '[[[',
       });
@@ -720,7 +698,7 @@ describe('connect function', () => {
     it('should have all required tools', async () => {
       const { tools } = await connect({ host: 'localhost', username: 'test' });
 
-      const toolNames = tools.map((t) => t.name);
+      const toolNames = Object.keys(tools);
       expect(toolNames).toEqual([
         'bash',
         'bash-output',
@@ -736,7 +714,7 @@ describe('connect function', () => {
     it('should have proper tool structure', async () => {
       const { tools } = await connect({ host: 'localhost', username: 'test' });
 
-      for (const tool of tools) {
+      for (const tool of Object.values(tools)) {
         expect(tool).toHaveProperty('name');
         expect(tool).toHaveProperty('description');
         expect(tool).toHaveProperty('inputSchema');
