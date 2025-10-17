@@ -9,7 +9,7 @@ import tseslint from 'typescript-eslint';
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   { files: ['**/*.{js,mjs,cjs,ts}'] },
-  { ignores: ['dist/**/*', 'sandbox/**/*'] },
+  { ignores: ['**/dist/**/*', 'sandbox/**/*'] },
   {
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
@@ -19,8 +19,11 @@ export default [
     languageOptions: {
       parserOptions: {
         projectService: {
-          tsconfigRootDir: __dirname,
-          allowDefaultProject: ['eslint.config.js', 'rollup.config.js'],
+          allowDefaultProject: [
+            '*.config.{js,mjs,cjs,ts}',
+            'packages/*/*.config.{js,mjs,cjs,ts}',
+            'packages/*/*.setup.{js,mjs,cjs,ts}',
+          ],
         },
       },
     },

@@ -163,10 +163,6 @@ export type KillShellOutput = {
   killed: boolean;
 };
 
-export const killShellOutputSchema = z.object({
-  killed: z.boolean().describe('Whether the shell was killed'),
-}) satisfies ZodType<KillShellOutput>;
-
 type Shell = BashOutputOutput & {
   channel: ClientChannel;
 };

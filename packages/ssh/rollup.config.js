@@ -1,3 +1,4 @@
+import json from '@rollup/plugin-json';
 import typescript from '@rollup/plugin-typescript';
 import dts from 'rollup-plugin-dts';
 
@@ -26,9 +27,12 @@ export default [
         declaration: false,
         declarationMap: false,
       }),
+      json(),
     ],
     // External all dependencies
-    external: /.*/,
+    external: (source) => {
+      return !source.startsWith('.') && !source.startsWith('/');
+    },
   },
   {
     input: 'src/index.ts',

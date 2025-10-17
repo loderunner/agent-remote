@@ -31,8 +31,14 @@
     "ssh2": "^1.17.0",
     "zod": "^3.25.76"
   },
+  "peerDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.0",
+    "@modelcontextprotocol/sdk": "^1.20.0"
+  },
   "devDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.21",
     "@modelcontextprotocol/sdk": "^1.20.0",
+    "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-typescript": "^12.1.4",
     "@types/ssh2": "^1.15.5",
     "rimraf": "^6.0.1",

@@ -8,7 +8,7 @@ import { FileTool } from './file';
 import { GlobTool } from './glob';
 import { GrepTool } from './grep';
 
-import { connect } from './index';
+import { Remote } from './index';
 
 // Mock all dependencies
 vi.mock('ssh2');
@@ -34,7 +34,7 @@ vi.mocked(Client).mockImplementation(() => mockClient);
 
 const mockSftp = mockDeep<SFTPWrapper>();
 
-describe('connect function', () => {
+describe('Remote', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -55,12 +55,14 @@ describe('connect function', () => {
 
   describe('connection', () => {
     it('should connect to SSH server successfully', async () => {
-      const result = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
       expect(Client).toHaveBeenCalledOnce();
       expect(mockClient.connect).toHaveBeenCalledOnce();
-      expect(result).toHaveProperty('tools');
-      expect(result).toHaveProperty('disconnect');
+      expect(remote.disconnect).toBeDefined();
     });
 
     it('should handle connection errors', async () => {
@@ -73,7 +75,7 @@ describe('connect function', () => {
       });
 
       await expect(
-        connect({ host: 'localhost', username: 'test' }),
+        Remote.connect({ host: 'localhost', username: 'test' }),
       ).rejects.toThrow('Connection failed');
     });
 
@@ -84,14 +86,17 @@ describe('connect function', () => {
       });
 
       await expect(
-        connect({ host: 'localhost', username: 'test' }),
+        Remote.connect({ host: 'localhost', username: 'test' }),
       ).rejects.toThrow('SFTP failed');
     });
 
     it('should provide disconnect function', async () => {
-      const result = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      result.disconnect();
+      await remote.disconnect();
 
       expect(mockSftp.end).toHaveBeenCalledOnce();
       expect(mockClient.end).toHaveBeenCalledOnce();
@@ -105,9 +110,12 @@ describe('connect function', () => {
         exitCode: 0,
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.bash.handler({ command: 'echo hello' });
+      const result = await remote.bash.handler({ command: 'echo hello' });
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'command output' }],
@@ -121,9 +129,12 @@ describe('connect function', () => {
     it('should handle bash command errors', async () => {
       mockBashTool.execute.mockRejectedValue(new Error('Command failed'));
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.bash.handler({ command: 'bad command' });
+      const result = await remote.bash.handler({ command: 'bad command' });
 
       expect(result).toEqual({
         content: [
@@ -147,9 +158,12 @@ describe('connect function', () => {
         status: 'running',
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools['bash-output'].handler({ shell_id: 'abc123' });
+      const result = await remote.bashOutput.handler({ shell_id: 'abc123' });
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'background output' }],
@@ -163,9 +177,12 @@ describe('connect function', () => {
     it('should handle bash output retrieval errors', async () => {
       mockBashTool.getOutput.mockRejectedValue(new Error('Shell not found'));
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools['bash-output'].handler({
+      const result = await remote.bashOutput.handler({
         shell_id: 'invalid',
       });
 
@@ -188,9 +205,12 @@ describe('connect function', () => {
     it('should kill shell successfully', async () => {
       mockBashTool.killShell.mockResolvedValue({ killed: true });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools['kill-bash'].handler({ shell_id: 'abc123' });
+      const result = await remote.killBash.handler({ shell_id: 'abc123' });
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Shell abc123 killed' }],
@@ -204,9 +224,12 @@ describe('connect function', () => {
     it('should handle shell not found when killing', async () => {
       mockBashTool.killShell.mockResolvedValue({ killed: false });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools['kill-bash'].handler({ shell_id: 'invalid' });
+      const result = await remote.killBash.handler({ shell_id: 'invalid' });
 
       expect(result).toEqual({
         content: [{ type: 'text', text: 'Shell invalid not found' }],
@@ -220,9 +243,12 @@ describe('connect function', () => {
     it('should handle kill shell errors', async () => {
       mockBashTool.killShell.mockRejectedValue(new Error('Failed to signal'));
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools['kill-bash'].handler({ shell_id: 'abc123' });
+      const result = await remote.killBash.handler({ shell_id: 'abc123' });
 
       expect(result).toEqual({
         content: [
@@ -244,9 +270,12 @@ describe('connect function', () => {
         numLines: 2,
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.grep.handler({
+      const result = await remote.grep.handler({
         pattern: 'ERROR',
         path: '/var/log',
         output_mode: 'content',
@@ -274,9 +303,12 @@ describe('connect function', () => {
         filenames: ['file1.txt', 'file2.txt', 'file3.txt'],
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.grep.handler({
+      const result = await remote.grep.handler({
         pattern: 'TODO',
         path: '/src',
         output_mode: 'files_with_matches',
@@ -308,9 +340,12 @@ describe('connect function', () => {
         numMatches: 42,
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.grep.handler({
+      const result = await remote.grep.handler({
         pattern: 'ERROR',
         path: '/var/log',
         output_mode: 'count',
@@ -330,9 +365,12 @@ describe('connect function', () => {
     it('should handle grep errors', async () => {
       mockGrepTool.grep.mockRejectedValue(new Error('Pattern invalid'));
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.grep.handler({
+      const result = await remote.grep.handler({
         pattern: '[',
         path: '/src',
       });
@@ -357,9 +395,12 @@ describe('connect function', () => {
         totalLines: 3,
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.read.handler({ file_path: '/home/test.txt' });
+      const result = await remote.read.handler({ file_path: '/home/test.txt' });
 
       expect(result).toEqual({
         content: [{ type: 'text', text: '1\tline 1\n2\tline 2\n3\tline 3' }],
@@ -383,9 +424,12 @@ describe('connect function', () => {
         totalLines: 100,
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.read.handler({
+      const result = await remote.read.handler({
         file_path: '/home/test.txt',
         offset: 98,
         limit: 2,
@@ -410,9 +454,12 @@ describe('connect function', () => {
     it('should handle read errors', async () => {
       mockFileTool.read.mockRejectedValue(new Error('File not found'));
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.read.handler({ file_path: '/invalid.txt' });
+      const result = await remote.read.handler({ file_path: '/invalid.txt' });
 
       expect(result).toEqual({
         content: [
@@ -432,9 +479,12 @@ describe('connect function', () => {
         content: 'new content',
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.write.handler({
+      const result = await remote.write.handler({
         file_path: '/home/test.txt',
         content: 'new content',
       });
@@ -454,9 +504,12 @@ describe('connect function', () => {
     it('should handle write errors', async () => {
       mockFileTool.write.mockRejectedValue(new Error('Permission denied'));
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.write.handler({
+      const result = await remote.write.handler({
         file_path: '/root/protected.txt',
         content: 'data',
       });
@@ -495,9 +548,12 @@ describe('connect function', () => {
         },
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.edit.handler({
+      const result = await remote.edit.handler({
         file_path: '/home/test.txt',
         old_string: 'old line',
         new_string: 'new line',
@@ -528,9 +584,12 @@ describe('connect function', () => {
         },
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.edit.handler({
+      const result = await remote.edit.handler({
         file_path: '/home/test.txt',
         old_string: 'foo',
         new_string: 'bar',
@@ -560,9 +619,12 @@ describe('connect function', () => {
         },
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.edit.handler({
+      const result = await remote.edit.handler({
         file_path: '/home/test.txt',
         old_string: 'not found',
         new_string: 'replacement',
@@ -581,9 +643,12 @@ describe('connect function', () => {
     it('should handle edit errors', async () => {
       mockFileTool.edit.mockRejectedValue(new Error('File locked'));
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.edit.handler({
+      const result = await remote.edit.handler({
         file_path: '/home/test.txt',
         old_string: 'old',
         new_string: 'new',
@@ -608,9 +673,12 @@ describe('connect function', () => {
         count: 3,
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.glob.handler({
+      const result = await remote.glob.handler({
         base_path: '/home/project',
         pattern: '**/*.ts',
       });
@@ -639,9 +707,12 @@ describe('connect function', () => {
         count: 1,
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.glob.handler({
+      const result = await remote.glob.handler({
         base_path: '/home',
         pattern: 'single.txt',
       });
@@ -659,9 +730,12 @@ describe('connect function', () => {
         count: 0,
       });
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.glob.handler({
+      const result = await remote.glob.handler({
         base_path: '/home',
         pattern: '*.xyz',
       });
@@ -676,9 +750,12 @@ describe('connect function', () => {
     it('should handle glob errors', async () => {
       mockGlobTool.glob.mockRejectedValue(new Error('Invalid pattern'));
 
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const result = await tools.glob.handler({
+      const result = await remote.glob.handler({
         base_path: '/home',
         pattern: '[[[',
       });
@@ -696,32 +773,46 @@ describe('connect function', () => {
 
   describe('tool definitions', () => {
     it('should have all required tools', async () => {
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      const toolNames = Object.keys(tools);
-      expect(toolNames).toEqual([
-        'bash',
-        'bash-output',
-        'kill-bash',
-        'grep',
-        'read',
-        'write',
-        'edit',
-        'glob',
-      ]);
+      expect(remote.bash).toBeDefined();
+      expect(remote.bashOutput).toBeDefined();
+      expect(remote.killBash).toBeDefined();
+      expect(remote.grep).toBeDefined();
+      expect(remote.read).toBeDefined();
+      expect(remote.write).toBeDefined();
+      expect(remote.edit).toBeDefined();
+      expect(remote.glob).toBeDefined();
     });
 
     it('should have proper tool structure', async () => {
-      const { tools } = await connect({ host: 'localhost', username: 'test' });
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
 
-      for (const tool of Object.values(tools)) {
+      const tools = [
+        remote.bash,
+        remote.bashOutput,
+        remote.killBash,
+        remote.grep,
+        remote.read,
+        remote.write,
+        remote.edit,
+        remote.glob,
+      ];
+
+      for (const tool of tools) {
         expect(tool).toHaveProperty('name');
         expect(tool).toHaveProperty('description');
         expect(tool).toHaveProperty('inputSchema');
         expect(tool).toHaveProperty('handler');
-        expect(typeof tool.name).toBe('string');
-        expect(typeof tool.description).toBe('string');
-        expect(typeof tool.handler).toBe('function');
+        expect(tool.name).toBeString();
+        expect(tool.description).toBeString();
+        expect(tool.handler).toBeFunction();
       }
     });
   });
