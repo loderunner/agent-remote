@@ -10,7 +10,7 @@
     "test": "pnpm -r test",
     "test:watch": "pnpm -r test:watch",
     "build": "pnpm -r build",
-    "example": "tsx example/index.ts",
+    "build:watch": "pnpm -r build:watch",
     "clean": "pnpm -r clean",
     "clean:all": "git clean -fdx"
   },

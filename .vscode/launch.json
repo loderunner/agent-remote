@@ -7,12 +7,11 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Example",
+      "name": "Example: Claude Agent SDK",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["run", "example"],
-      "cwd": "${workspaceFolder}/example",
-      "console": "integratedTerminal",
-      "skipFiles": ["<node_internals>/**"]
+      "runtimeArgs": ["start"],
+      "cwd": "${workspaceFolder}/examples/claude-agent-sdk",
+      "console": "integratedTerminal"
     }
   ]
 }
