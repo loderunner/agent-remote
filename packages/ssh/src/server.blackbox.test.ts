@@ -4,14 +4,18 @@
  */
 
 import { exec, execFile } from 'child_process';
+import { mkdtemp, rm } from 'fs/promises';
+import { tmpdir } from 'os';
+import { join } from 'path';
 import { promisify } from 'util';
 
-import { beforeAll, describe, expect, test } from 'vitest';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 
-const SERVER_PATH = new URL('../dist/server.cjs', import.meta.url).pathname;
+let tempDir: string;
+let SERVER_PATH: string;
 
 /**
  * Helper to run the server with args and capture output.
@@ -55,27 +59,51 @@ async function runServer(
 
 describe('MCP Server Executable - Black Box Tests', () => {
   /**
-   * Build the server before running tests.
-   * This ensures we're always testing against the latest code,
-   * even if dist/ doesn't exist or is stale.
+   * Build the server to a temporary location before running tests.
+   * This ensures we're testing the latest code without interfering
+   * with the user's actual build in dist/.
    */
   beforeAll(async () => {
-    console.log('Building server for black box tests...');
+    // Create temporary directory
+    tempDir = await mkdtemp(join(tmpdir(), 'ssh-server-test-'));
+    SERVER_PATH = join(tempDir, 'server.cjs');
+
+    console.log(`Building server to temporary location: ${tempDir}`);
     try {
-      const { stdout, stderr } = await execAsync('pnpm build', {
-        cwd: new URL('..', import.meta.url).pathname,
-        timeout: 120000,
-      });
-      if (stderr && !stderr.includes('created dist/server.cjs')) {
-        console.log('Build output:', stdout);
-        if (stderr) console.error('Build stderr:', stderr);
-      }
-      console.log('✓ Server built successfully');
+      const packageDir = new URL('..', import.meta.url).pathname;
+
+      // Build using rollup with custom output
+      // Use environment variable to override output path
+      await execAsync(
+        `ROLLUP_OUTPUT_FILE=${SERVER_PATH} npx rollup -c --input src/server.ts --file ${SERVER_PATH} --format cjs --banner "#!/usr/bin/env node"`,
+        {
+          cwd: packageDir,
+          timeout: 120000,
+          env: { ...process.env, ROLLUP_OUTPUT_FILE: SERVER_PATH },
+        },
+      );
+
+      console.log('✓ Server built successfully to temp location');
     } catch (error) {
       console.error('Failed to build server:', error);
+      // @ts-expect-error - error might have stdout/stderr
+      if (error.stdout) console.log('stdout:', error.stdout);
+      // @ts-expect-error - error might have stdout/stderr
+      if (error.stderr) console.error('stderr:', error.stderr);
       throw error;
     }
   }, 120000);
+
+  /**
+   * Clean up temporary build after all tests complete.
+   */
+  afterAll(async () => {
+    if (tempDir) {
+      console.log(`Cleaning up temporary build: ${tempDir}`);
+      await rm(tempDir, { recursive: true, force: true });
+      console.log('✓ Cleanup complete');
+    }
+  });
 
   describe('Help and Version', () => {
     test('should show help with --help', async () => {
