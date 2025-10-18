@@ -7,18 +7,13 @@
   "module": "dist/esm/index.mjs",
   "types": "dist/index.d.ts",
   "bin": {
-    "ssh-mcp-server": "./dist/esm/server.mjs"
+    "ssh-mcp-server": "./dist/server.cjs"
   },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/esm/index.mjs",
       "require": "./dist/cjs/index.cjs"
-    },
-    "./server": {
-      "types": "./dist/server.d.ts",
-      "import": "./dist/esm/server.mjs",
-      "require": "./dist/cjs/server.cjs"
     }
   },
   "files": [
@@ -46,7 +41,9 @@
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.21",
     "@modelcontextprotocol/sdk": "^1.20.0",
+    "@rollup/plugin-commonjs": "^28.0.8",
     "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-typescript": "^12.1.4",
     "@types/ssh2": "^1.15.5",
     "rimraf": "^6.0.1",

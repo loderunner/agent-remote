@@ -233,28 +233,28 @@ async function main() {
 
       switch (name) {
         case 'bash':
-          result = await remote.bash.handler(args);
+          result = await remote.bash.handler(args as never);
           break;
         case 'bash-output':
-          result = await remote.bashOutput.handler(args);
+          result = await remote.bashOutput.handler(args as never);
           break;
         case 'kill-bash':
-          result = await remote.killBash.handler(args);
+          result = await remote.killBash.handler(args as never);
           break;
         case 'grep':
-          result = await remote.grep.handler(args);
+          result = await remote.grep.handler(args as never);
           break;
         case 'read':
-          result = await remote.read.handler(args);
+          result = await remote.read.handler(args as never);
           break;
         case 'write':
-          result = await remote.write.handler(args);
+          result = await remote.write.handler(args as never);
           break;
         case 'edit':
-          result = await remote.edit.handler(args);
+          result = await remote.edit.handler(args as never);
           break;
         case 'glob':
-          result = await remote.glob.handler(args);
+          result = await remote.glob.handler(args as never);
           break;
         default:
           throw new Error(`Unknown tool: ${name}`);

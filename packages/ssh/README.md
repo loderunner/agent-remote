@@ -26,9 +26,10 @@ pnpm add @claude-remote/ssh
 
 ### MCP Server (Standalone)
 
-The package includes a standalone MCP server that can be run from the command
-line and communicate over stdio transport. This is useful for integrating with
-MCP clients.
+The package includes a standalone MCP server executable that can be run from the
+command line and communicates over stdio transport. The server is self-contained
+with all dependencies bundled (except Node.js builtins), making it easy to
+distribute and run without installing node_modules.
 
 **Installation:**
 
