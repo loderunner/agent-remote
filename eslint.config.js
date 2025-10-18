@@ -23,6 +23,7 @@ export default [
             '*.config.{js,mjs,cjs,ts}',
             'packages/*/*.config.{js,mjs,cjs,ts}',
             'packages/*/*.setup.{js,mjs,cjs,ts}',
+            'packages/*/scripts/*.{js,mjs,cjs,ts}',
           ],
         },
       },

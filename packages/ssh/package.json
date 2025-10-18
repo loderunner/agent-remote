@@ -22,7 +22,7 @@
     "!src/**/*.test.ts"
   ],
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c && node scripts/postbuild.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "clean": "rimraf dist"
