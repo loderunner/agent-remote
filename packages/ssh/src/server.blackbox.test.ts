@@ -3,11 +3,12 @@
  * These tests run the actual built server script and validate outputs.
  */
 
-import { execFile } from 'child_process';
+import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
 
-import { describe, expect, test } from 'vitest';
+import { beforeAll, describe, expect, test } from 'vitest';
 
+const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
 
 const SERVER_PATH = new URL('../dist/server.cjs', import.meta.url).pathname;
@@ -53,6 +54,29 @@ async function runServer(
 }
 
 describe('MCP Server Executable - Black Box Tests', () => {
+  /**
+   * Build the server before running tests.
+   * This ensures we're always testing against the latest code,
+   * even if dist/ doesn't exist or is stale.
+   */
+  beforeAll(async () => {
+    console.log('Building server for black box tests...');
+    try {
+      const { stdout, stderr } = await execAsync('pnpm build', {
+        cwd: new URL('..', import.meta.url).pathname,
+        timeout: 120000,
+      });
+      if (stderr && !stderr.includes('created dist/server.cjs')) {
+        console.log('Build output:', stdout);
+        if (stderr) console.error('Build stderr:', stderr);
+      }
+      console.log('✓ Server built successfully');
+    } catch (error) {
+      console.error('Failed to build server:', error);
+      throw error;
+    }
+  }, 120000);
+
   describe('Help and Version', () => {
     test('should show help with --help', async () => {
       const { stdout, stderr, exitCode } = await runServer(['--help']);
