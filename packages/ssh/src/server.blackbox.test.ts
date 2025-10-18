@@ -81,7 +81,6 @@ describe.skipIf(!RUN_BLACKBOX)(
       tempDir = await mkdtemp(join(tmpdir(), 'ssh-server-test-'));
       SERVER_PATH = join(tempDir, 'server.cjs');
 
-      console.log(`Building server to temporary location: ${tempDir}`);
       try {
         const packageDir = new URL('..', import.meta.url).pathname;
 
@@ -95,15 +94,16 @@ describe.skipIf(!RUN_BLACKBOX)(
             env: { ...process.env, ROLLUP_OUTPUT_FILE: SERVER_PATH },
           },
         );
-
-        console.log('✓ Server built successfully to temp location');
       } catch (error) {
-        console.error('Failed to build server:', error);
-        // @ts-expect-error - error might have stdout/stderr
-        if (error.stdout) console.log('stdout:', error.stdout);
-        // @ts-expect-error - error might have stdout/stderr
-        if (error.stderr) console.error('stderr:', error.stderr);
-        throw error;
+        const execError = error as { stdout?: string; stderr?: string };
+        const errorMessage = [
+          'Failed to build server:',
+          execError.stdout,
+          execError.stderr,
+        ]
+          .filter(Boolean)
+          .join('\n');
+        throw new Error(errorMessage);
       }
     }, 120000);
 
@@ -112,9 +112,7 @@ describe.skipIf(!RUN_BLACKBOX)(
      */
     afterAll(async () => {
       if (tempDir) {
-        console.log(`Cleaning up temporary build: ${tempDir}`);
         await rm(tempDir, { recursive: true, force: true });
-        console.log('✓ Cleanup complete');
       }
     });
 
@@ -149,8 +147,8 @@ describe.skipIf(!RUN_BLACKBOX)(
         expect(stdout.trim()).toMatch(/^\d+\.\d+\.\d+$/);
       });
 
-      test('should show version with -v', async () => {
-        const { stdout, exitCode } = await runServer(['-v']);
+      test('should show version with -V', async () => {
+        const { stdout, exitCode } = await runServer(['-V']);
 
         expect(exitCode).toBe(0);
         expect(stdout.trim()).toMatch(/^\d+\.\d+\.\d+$/);

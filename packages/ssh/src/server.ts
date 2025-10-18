@@ -24,7 +24,7 @@ function parseSSHConfig(): ConnectConfig {
     .version(packageJson.version)
     .help('help')
     .alias('help', 'h')
-    .alias('version', 'v')
+    .alias('version', 'V')
     .option('host', {
       alias: 'H',
       type: 'string',
