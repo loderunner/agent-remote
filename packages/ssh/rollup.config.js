@@ -6,6 +6,7 @@ import packageJson from './package.json' with { type: 'json' };
 
 /** @type {import('rollup').RollupOptions[]} */
 export default [
+  // Build main library
   {
     input: 'src/index.ts',
     output: [
@@ -37,6 +38,42 @@ export default [
   {
     input: 'src/index.ts',
     output: { file: packageJson.types, format: 'es' },
+    plugins: [dts({ compilerOptions: { removeComments: true } })],
+  },
+  // Build MCP server
+  {
+    input: 'src/server.ts',
+    output: [
+      {
+        file: 'dist/cjs/server.cjs',
+        format: 'cjs',
+        sourcemap: true,
+        banner: '#!/usr/bin/env node',
+      },
+      {
+        file: 'dist/esm/server.mjs',
+        format: 'esm',
+        sourcemap: true,
+        banner: '#!/usr/bin/env node',
+      },
+    ],
+    plugins: [
+      typescript({
+        tsconfig: './tsconfig.json',
+        exclude: ['**/*.test.ts', './*.ts'],
+        declaration: false,
+        declarationMap: false,
+      }),
+      json(),
+    ],
+    // External all dependencies
+    external: (source) => {
+      return !source.startsWith('.') && !source.startsWith('/');
+    },
+  },
+  {
+    input: 'src/server.ts',
+    output: { file: 'dist/server.d.ts', format: 'es' },
     plugins: [dts({ compilerOptions: { removeComments: true } })],
   },
 ];

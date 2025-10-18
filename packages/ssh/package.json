@@ -6,11 +6,19 @@
   "main": "dist/cjs/index.cjs",
   "module": "dist/esm/index.mjs",
   "types": "dist/index.d.ts",
+  "bin": {
+    "ssh-mcp-server": "./dist/esm/server.mjs"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/esm/index.mjs",
       "require": "./dist/cjs/index.cjs"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/esm/server.mjs",
+      "require": "./dist/cjs/server.cjs"
     }
   },
   "files": [
