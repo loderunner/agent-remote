@@ -10,7 +10,7 @@ import { describe, expect, test } from 'vitest';
 
 const execFileAsync = promisify(execFile);
 
-const SERVER_PATH = new URL('../dist/server', import.meta.url).pathname;
+const SERVER_PATH = new URL('../dist/server.cjs', import.meta.url).pathname;
 
 /**
  * Helper to run the server with args and capture output.
@@ -59,7 +59,7 @@ describe('MCP Server Executable - Black Box Tests', () => {
       const output = stdout + stderr;
 
       expect(exitCode).toBe(0);
-      expect(output).toContain('server [OPTIONS]');
+      expect(output).toContain('server.cjs [OPTIONS]');
       expect(output).toContain('SSH Connection Options:');
       expect(output).toContain('--host');
       expect(output).toContain('--username');
@@ -74,7 +74,7 @@ describe('MCP Server Executable - Black Box Tests', () => {
       const output = stdout + stderr;
 
       expect(exitCode).toBe(0);
-      expect(output).toContain('server [OPTIONS]');
+      expect(output).toContain('server.cjs [OPTIONS]');
     });
 
     test('should show version with --version', async () => {

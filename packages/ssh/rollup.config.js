@@ -48,7 +48,7 @@ export default [
   {
     input: 'src/server.ts',
     output: {
-      file: 'dist/server',
+      file: 'dist/server.cjs',
       format: 'cjs',
       sourcemap: false,
       banner: '#!/usr/bin/env node',
