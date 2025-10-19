@@ -26,7 +26,7 @@
     "build:watch": "rollup -c --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:blackbox": "RUN_BLACKBOX=true vitest run src/server.blackbox.test.ts",
+    "test:e2e": "RUN_E2E=true vitest run src/server.e2e.test.ts",
     "clean": "rimraf dist"
   },
   "dependencies": {
