@@ -80,14 +80,12 @@ describe.skipIf(!RUN_E2E)('MCP Server Executable - End-to-End Tests', () => {
     try {
       const packageDir = new URL('..', import.meta.url).pathname;
 
-      // Build using rollup with custom output
-      // Use environment variable to override output path
+      // Build using rollup with custom output to temp directory
       await execAsync(
-        `ROLLUP_OUTPUT_FILE=${SERVER_PATH} npx rollup -c --input src/server.ts --file ${SERVER_PATH} --format cjs --banner "#!/usr/bin/env node"`,
+        `npx rollup -c --input src/server.ts --file ${SERVER_PATH} --format cjs --banner "#!/usr/bin/env node"`,
         {
           cwd: packageDir,
           timeout: 120000,
-          env: { ...process.env, ROLLUP_OUTPUT_FILE: SERVER_PATH },
         },
       );
     } catch (error) {
