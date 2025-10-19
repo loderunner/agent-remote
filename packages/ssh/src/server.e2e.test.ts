@@ -5,8 +5,6 @@
  * By default, these tests are SKIPPED because they take ~30s to build and run.
  *
  * To run them, use:
- * RUN_E2E=true pnpm test src/server.e2e.test.ts
- * or
  * pnpm test:e2e
  */
 
