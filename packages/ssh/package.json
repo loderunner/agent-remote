@@ -23,6 +23,7 @@
   ],
   "scripts": {
     "build": "rollup -c",
+    "build:watch": "rollup -c --watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:blackbox": "RUN_BLACKBOX=true vitest run src/server.blackbox.test.ts",
