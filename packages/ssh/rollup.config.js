@@ -22,16 +22,20 @@ export default [
       },
     ],
     plugins: [
+      json(),
       typescript({
         tsconfig: './tsconfig.json',
         exclude: ['**/*.test.ts', './*.ts'],
         declaration: false,
         declarationMap: false,
       }),
-      json(),
     ],
     external: (source) => {
-      return !source.startsWith('.') && !source.startsWith('/');
+      return (
+        !source.startsWith('.') &&
+        !source.startsWith('/') &&
+        !source.startsWith('~/')
+      );
     },
   },
   {
@@ -49,6 +53,7 @@ export default [
       banner: '#!/usr/bin/env node',
     },
     plugins: [
+      json(),
       typescript({
         tsconfig: './tsconfig.json',
         exclude: ['**/*.test.ts', './*.ts'],
@@ -56,10 +61,13 @@ export default [
         declarationMap: false,
         sourceMap: false,
       }),
-      json(),
     ],
     external: (source) => {
-      return !source.startsWith('.') && !source.startsWith('/');
+      return (
+        !source.startsWith('.') &&
+        !source.startsWith('/') &&
+        !source.startsWith('~/')
+      );
     },
   },
 ];

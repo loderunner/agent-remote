@@ -33,6 +33,15 @@
       "runtimeArgs": ["start"],
       "cwd": "${workspaceFolder}/examples/claude-agent-sdk",
       "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Build SSH Package",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["build"],
+      "cwd": "${workspaceFolder}/packages/ssh",
+      "console": "integratedTerminal"
     }
   ]
 }

@@ -11,7 +11,8 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import packageJson from '../../package.json';
-import { Remote } from '../lib/remote';
+
+import { Remote } from '~/lib/remote';
 
 /**
  * Parse SSH configuration from command line arguments and environment variables.
