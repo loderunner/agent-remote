@@ -69,6 +69,8 @@ ssh-mcp-server
 - `--passphrase` - Passphrase for encrypted private key (or `SSH_PASSPHRASE` env
   var)
 - `--agent` - SSH agent socket path (or `SSH_AUTH_SOCK` env var)
+- `--timeout, -t` - SSH connection timeout in milliseconds (or `SSH_TIMEOUT` env
+  var)
 
 The server exposes all remote tools (bash, read, write, edit, grep, glob, etc.)
 through the MCP protocol.
