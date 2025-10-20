@@ -4,7 +4,7 @@ import { formatPatch } from 'diff';
 import { Client, ConnectConfig, SFTPWrapper } from 'ssh2';
 import type { ZodObject, ZodRawShape } from 'zod';
 
-import packageJson from '../package.json';
+import packageJson from '../../package.json';
 
 import {
   BashInput,
@@ -179,7 +179,10 @@ export class Remote {
       client.on('error', (err) => {
         reject(err);
       });
-      client.connect(config);
+      client.connect({
+        readyTimeout: 3000,
+        ...config,
+      });
     });
 
     const sftp = await new Promise<SFTPWrapper>((resolve, reject) => {

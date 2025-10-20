@@ -10,9 +10,8 @@ import type { ConnectConfig } from 'ssh2';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import packageJson from '../package.json';
-
-import { Remote } from './remote';
+import packageJson from '../../package.json';
+import { Remote } from '../lib/remote';
 
 /**
  * Parse SSH configuration from command line arguments and environment variables.
@@ -25,43 +24,38 @@ function parseSSHConfig(): ConnectConfig {
     .help('help')
     .alias('help', 'h')
     .alias('version', 'V')
+    .env('SSH')
     .option('host', {
       alias: 'H',
       type: 'string',
-      description: 'SSH host',
-      default: process.env.SSH_HOST,
+      description: 'SSH host (env: SSH_HOST)',
     })
     .option('port', {
       alias: 'p',
       type: 'number',
-      description: 'SSH port',
-      default: process.env.SSH_PORT ? parseInt(process.env.SSH_PORT, 10) : 22,
+      description: 'SSH port (env: SSH_PORT)',
+      default: 22,
     })
     .option('username', {
       alias: 'u',
       type: 'string',
-      description: 'SSH username',
-      default: process.env.SSH_USERNAME,
+      description: 'SSH username (env: SSH_USERNAME)',
     })
     .option('password', {
       type: 'string',
-      description: 'SSH password',
-      default: process.env.SSH_PASSWORD,
+      description: 'SSH password (env: SSH_PASSWORD)',
     })
     .option('private-key', {
       type: 'string',
-      description: 'Path to private key file',
-      default: process.env.SSH_PRIVATE_KEY,
+      description: 'Path to private key file (env: SSH_PRIVATE_KEY)',
     })
     .option('passphrase', {
       type: 'string',
-      description: 'Passphrase for encrypted private key',
-      default: process.env.SSH_PASSPHRASE,
+      description: 'Passphrase for encrypted private key (env: SSH_PASSPHRASE)',
     })
     .option('agent', {
       type: 'string',
-      description: 'SSH agent socket path',
-      default: process.env.SSH_AUTH_SOCK,
+      description: 'SSH agent socket path (env: SSH_AUTH_SOCK)',
     })
     .check(
       (argv: {
@@ -79,7 +73,12 @@ function parseSSHConfig(): ConnectConfig {
             'SSH username is required (--username or SSH_USERNAME)',
           );
         }
-        if (!argv.password && !argv['private-key'] && !argv.agent) {
+        const hasAuth =
+          argv.password ??
+          argv['private-key'] ??
+          argv.agent ??
+          process.env.SSH_AUTH_SOCK;
+        if (!hasAuth) {
           throw new Error(
             'SSH authentication required: provide --password, --private-key, or --agent',
           );
@@ -100,29 +99,11 @@ function parseSSHConfig(): ConnectConfig {
       'SSH Connection Options:',
     )
     .epilogue(
-      'Environment Variables:\n' +
-        '  SSH_HOST           SSH host\n' +
-        '  SSH_PORT           SSH port\n' +
-        '  SSH_USERNAME       SSH username\n' +
-        '  SSH_PASSWORD       SSH password\n' +
-        '  SSH_PRIVATE_KEY    Path to private key file or key content\n' +
-        '  SSH_PASSPHRASE     Passphrase for private key\n' +
-        '  SSH_AUTH_SOCK      SSH agent socket path\n\n' +
-        'Authentication:\n' +
+      'Authentication:\n' +
         '  Provide one of the following:\n' +
         '    - Password: --password or SSH_PASSWORD\n' +
         '    - Private key: --private-key or SSH_PRIVATE_KEY\n' +
-        '    - SSH agent: --agent or SSH_AUTH_SOCK\n\n' +
-        'Examples:\n' +
-        '  # With password\n' +
-        '  ssh-mcp-server --host example.com --username user --password secret\n\n' +
-        '  # With private key\n' +
-        '  ssh-mcp-server --host example.com --username user --private-key ~/.ssh/id_rsa\n\n' +
-        '  # Using environment variables\n' +
-        '  export SSH_HOST=example.com\n' +
-        '  export SSH_USERNAME=user\n' +
-        '  export SSH_PRIVATE_KEY=~/.ssh/id_rsa\n' +
-        '  ssh-mcp-server',
+        '    - SSH agent: --agent or SSH_AUTH_SOCK\n\n',
     )
     .parseSync();
 
@@ -147,8 +128,12 @@ function parseSSHConfig(): ConnectConfig {
     if (argv.passphrase) {
       config.passphrase = argv.passphrase;
     }
-  } else if (argv.agent) {
-    config.agent = argv.agent;
+  } else {
+    // Fall back to SSH agent (either provided or SSH_AUTH_SOCK)
+    const agentPath = argv.agent ?? process.env.SSH_AUTH_SOCK;
+    if (agentPath) {
+      config.agent = agentPath;
+    }
   }
 
   return config;
@@ -160,6 +145,7 @@ async function main() {
 
   // Connect to remote host
   const remote = await Remote.connect(sshConfig);
+  console.error('Connected to remote host');
 
   // Create MCP server
   const server = new Server(
@@ -299,6 +285,7 @@ async function main() {
   // Connect with stdio transport
   const transport = new StdioServerTransport();
   await server.connect(transport);
+  console.error('MCP server connected to stdio');
 
   // Handle cleanup on exit
   process.on('SIGINT', () => {
