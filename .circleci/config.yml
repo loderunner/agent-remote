@@ -1,0 +1,179 @@
+version: 2.1
+
+# Orbs provide reusable packages of configuration
+orbs:
+  node: circleci/node@5.2.0
+
+# Reusable executors
+executors:
+  node-executor:
+    docker:
+      - image: cimg/node:20.18
+    working_directory: ~/project
+
+# Reusable commands
+commands:
+  setup-pnpm:
+    description: "Install and configure pnpm"
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - pnpm-store-v1-{{ checksum "pnpm-lock.yaml" }}
+            - pnpm-store-v1-
+      - run:
+          name: Install pnpm
+          command: |
+            corepack enable
+            corepack prepare pnpm@10.18.0 --activate
+      - run:
+          name: Install dependencies
+          command: pnpm install --frozen-lockfile
+      - save_cache:
+          key: pnpm-store-v1-{{ checksum "pnpm-lock.yaml" }}
+          paths:
+            - ~/.local/share/pnpm/store
+
+# Job definitions
+jobs:
+  lint:
+    executor: node-executor
+    steps:
+      - setup-pnpm
+      - run:
+          name: Run linter
+          command: pnpm run lint
+
+  test:
+    executor: node-executor
+    steps:
+      - setup-pnpm
+      - run:
+          name: Run tests
+          command: pnpm run test
+
+  build:
+    executor: node-executor
+    steps:
+      - setup-pnpm
+      - run:
+          name: Build packages
+          command: pnpm run build
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - packages/*/dist
+
+  release-prepare:
+    executor: node-executor
+    steps:
+      - checkout
+      - run:
+          name: Install release-please CLI
+          command: npm install -g release-please
+      - run:
+          name: Create or update release PR
+          command: |
+            release-please release-pr \
+              --token="${GITHUB_TOKEN}" \
+              --repo-url="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}" \
+              --target-branch=main
+
+  release-publish:
+    executor: node-executor
+    steps:
+      - setup-pnpm
+      - run:
+          name: Build packages for release
+          command: pnpm run build
+      - run:
+          name: Configure NPM authentication
+          command: |
+            echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+      - run:
+          name: Install release-please CLI
+          command: npm install -g release-please
+      - run:
+          name: Create GitHub release
+          command: |
+            release-please github-release \
+              --token="${GITHUB_TOKEN}" \
+              --repo-url="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}" \
+              --target-branch=main
+      - run:
+          name: Publish to NPM
+          command: |
+            # Publish all packages in the workspace
+            pnpm -r --filter "./packages/*" publish --access public --no-git-checks
+
+# Workflow definitions
+workflows:
+  # Integration workflow - runs on all branches except main
+  integration:
+    jobs:
+      - lint:
+          filters:
+            branches:
+              ignore: main
+            tags:
+              ignore: /.*/
+      - test:
+          filters:
+            branches:
+              ignore: main
+            tags:
+              ignore: /.*/
+      - build:
+          requires:
+            - lint
+            - test
+          filters:
+            branches:
+              ignore: main
+            tags:
+              ignore: /.*/
+
+  # Release preparation workflow - runs on main branch commits
+  release-preparation:
+    jobs:
+      - lint:
+          filters:
+            branches:
+              only: main
+            tags:
+              ignore: /.*/
+      - test:
+          filters:
+            branches:
+              only: main
+            tags:
+              ignore: /.*/
+      - build:
+          requires:
+            - lint
+            - test
+          filters:
+            branches:
+              only: main
+            tags:
+              ignore: /.*/
+      - release-prepare:
+          requires:
+            - lint
+            - test
+            - build
+          filters:
+            branches:
+              only: main
+            tags:
+              ignore: /.*/
+
+  # Release publication workflow - runs on version tags
+  release-publication:
+    jobs:
+      - release-publish:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v\d+\.\d+\.\d+$/

@@ -1,0 +1,21 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "claude-remote",
+      "changelog-path": "CHANGELOG.md"
+    },
+    "packages/ssh": {
+      "release-type": "node",
+      "package-name": "@claude-remote/ssh",
+      "changelog-path": "CHANGELOG.md"
+    }
+  },
+  "release-search-depth": 5,
+  "pull-request-title-pattern": "chore: release ${component} ${version}",
+  "plugins": [
+    {
+      "type": "node-workspace"
+    }
+  ]
+}
