@@ -1,0 +1,22 @@
+{
+  "name": "@claude-remote/integration-tests",
+  "version": "1.0.0",
+  "description": "Shared integration test suites for remote execution packages",
+  "type": "module",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "clean": "rimraf dist"
+  },
+  "peerDependencies": {
+    "vitest": "^3.2.4"
+  },
+  "devDependencies": {
+    "jest-extended": "^6.0.0",
+    "rimraf": "^6.0.1",
+    "vitest": "^3.2.4"
+  }
+}

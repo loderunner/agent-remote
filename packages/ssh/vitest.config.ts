@@ -21,7 +21,7 @@ export default defineConfig({
         test: {
           ...test,
           name: 'integration',
-          include: ['src/**/*.integration.test.ts'],
+          include: ['src/**/*.integration.test.ts', 'tests/**/*.integration.test.ts'],
         },
       },
       {
