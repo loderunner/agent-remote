@@ -43,7 +43,7 @@ describe('Integration Tests', () => {
       fileTool = new FileTool(sftp);
 
       fileContent = await fs.readFile(
-        `${__dirname}/../../../sandbox/fixtures/simple.txt`,
+        `${__dirname}/../../../../sandbox/fixtures/simple.txt`,
         'utf8',
       );
       fileLines = fileContent.split('\n');

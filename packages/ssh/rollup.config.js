@@ -6,8 +6,9 @@ import packageJson from './package.json' with { type: 'json' };
 
 /** @type {import('rollup').RollupOptions[]} */
 export default [
+  // Build main library
   {
-    input: 'src/index.ts',
+    input: 'src/lib/index.ts',
     output: [
       {
         file: packageJson.main,
@@ -29,14 +30,36 @@ export default [
       }),
       json(),
     ],
-    // External all dependencies
     external: (source) => {
       return !source.startsWith('.') && !source.startsWith('/');
     },
   },
   {
-    input: 'src/index.ts',
+    input: 'src/lib/index.ts',
     output: { file: packageJson.types, format: 'es' },
     plugins: [dts({ compilerOptions: { removeComments: true } })],
+  },
+  // Build standalone MCP server executable
+  {
+    input: 'src/server/server.ts',
+    output: {
+      file: 'dist/server.cjs',
+      format: 'cjs',
+      sourcemap: false,
+      banner: '#!/usr/bin/env node',
+    },
+    plugins: [
+      typescript({
+        tsconfig: './tsconfig.json',
+        exclude: ['**/*.test.ts', './*.ts'],
+        declaration: false,
+        declarationMap: false,
+        sourceMap: false,
+      }),
+      json(),
+    ],
+    external: (source) => {
+      return !source.startsWith('.') && !source.startsWith('/');
+    },
   },
 ];

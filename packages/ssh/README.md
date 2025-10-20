@@ -13,6 +13,8 @@ with remote system access.
 - **Type-safe** - Full TypeScript support with Zod validation
 - **Agent SDK integration** - Easy integration with Claude Agent SDK via MCP
   server
+- **Standalone MCP server** - Run as a standalone MCP server with stdio
+  transport
 
 ## Installation
 
@@ -21,6 +23,55 @@ pnpm add @claude-remote/ssh
 ```
 
 ## Quick Start
+
+### MCP Server (Standalone)
+
+The package includes a standalone MCP server executable that can be run from the
+command line and communicates over stdio transport. The server is self-contained
+with all dependencies bundled (except Node.js builtins), making it easy to
+distribute and run without installing node_modules.
+
+**Installation:**
+
+```bash
+npm install -g @claude-remote/ssh
+```
+
+**Usage with command line arguments:**
+
+```bash
+# With password authentication
+ssh-mcp-server --host example.com --username user --password secret
+
+# With private key authentication
+ssh-mcp-server --host example.com --username user --private-key ~/.ssh/id_rsa
+
+# With SSH agent
+ssh-mcp-server --host example.com --username user --agent $SSH_AUTH_SOCK
+```
+
+**Usage with environment variables:**
+
+```bash
+export SSH_HOST=example.com
+export SSH_USERNAME=user
+export SSH_PRIVATE_KEY=~/.ssh/id_rsa
+ssh-mcp-server
+```
+
+**Available options:**
+
+- `--host, -h` - SSH host (or `SSH_HOST` env var)
+- `--port, -p` - SSH port, default 22 (or `SSH_PORT` env var)
+- `--username, -u` - SSH username (or `SSH_USERNAME` env var)
+- `--password` - SSH password (or `SSH_PASSWORD` env var)
+- `--private-key` - Path to private key file (or `SSH_PRIVATE_KEY` env var)
+- `--passphrase` - Passphrase for encrypted private key (or `SSH_PASSPHRASE` env
+  var)
+- `--agent` - SSH agent socket path (or `SSH_AUTH_SOCK` env var)
+
+The server exposes all remote tools (bash, read, write, edit, grep, glob, etc.)
+through the MCP protocol.
 
 ### Basic Usage
 

@@ -7,6 +7,27 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "SSH MCP Server",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "run",
+        "server:watch",
+        "--host",
+        "localhost",
+        "--port",
+        "2222",
+        "--username",
+        "dev",
+        "--private-key",
+        "${workspaceFolder}/sandbox/ssh_key"
+      ],
+      "restart": true,
+      "cwd": "${workspaceFolder}/packages/ssh",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Example: Claude Agent SDK",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["start"],

@@ -6,6 +6,9 @@
   "main": "dist/cjs/index.cjs",
   "module": "dist/esm/index.mjs",
   "types": "dist/index.d.ts",
+  "bin": {
+    "remote-ssh-mcp-server": "./dist/server.cjs"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -23,6 +26,14 @@
     "build:watch": "rollup -c --watch",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:unit": "vitest run --project=unit",
+    "test:integration": "vitest run --project=integration",
+    "test:e2e": "vitest run --project=e2e",
+    "test:watch:unit": "vitest --project=unit",
+    "test:watch:integration": "vitest --project=integration",
+    "test:watch:e2e": "vitest --project=e2e",
+    "server": "tsx src/server/server.ts",
+    "server:watch": "tsx --watch src/server/server.ts",
     "clean": "rimraf dist"
   },
   "dependencies": {
@@ -30,6 +41,7 @@
     "minimatch": "^10.0.3",
     "nanoid": "^5.1.6",
     "ssh2": "^1.17.0",
+    "yargs": "^18.0.0",
     "zod": "^3.25.76"
   },
   "peerDependencies": {
@@ -39,9 +51,12 @@
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.21",
     "@modelcontextprotocol/sdk": "^1.20.0",
+    "@rollup/plugin-commonjs": "^28.0.8",
     "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-typescript": "^12.1.4",
     "@types/ssh2": "^1.15.5",
+    "@types/yargs": "^17.0.33",
     "rimraf": "^6.0.1",
     "rollup": "^4.52.4",
     "rollup-plugin-dts": "^6.2.3"

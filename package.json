@@ -9,6 +9,7 @@
     "lint:fix": "prettier --write . && eslint --fix --max-warnings=0",
     "test": "pnpm -r test",
     "test:watch": "pnpm -r test:watch",
+    "test:e2e": "pnpm -r test:e2e",
     "build": "pnpm -r build",
     "build:watch": "pnpm -r build:watch",
     "clean": "pnpm -r clean",
