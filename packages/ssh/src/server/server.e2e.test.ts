@@ -228,7 +228,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--password',
         'testpass',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
@@ -246,7 +246,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--password',
         'testpass',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
@@ -262,7 +262,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--username',
         'testuser',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
@@ -294,7 +294,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--password',
         'clipass',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
@@ -315,7 +315,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--password',
         'testpass',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
@@ -334,7 +334,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--password',
         'testpass',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
@@ -351,7 +351,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--password',
         'testpass',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
@@ -370,7 +370,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--password',
         'testpass',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
@@ -386,7 +386,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--private-key',
         '/fake/path/to/key',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
@@ -402,7 +402,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--agent',
         '/fake/ssh/agent.sock',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
@@ -420,7 +420,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--passphrase',
         'myphrase',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
@@ -438,7 +438,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--password',
         'testpass',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
@@ -456,7 +456,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--password',
         'testpass',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
@@ -472,7 +472,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
         '--password',
         'testpass',
         '--timeout',
-        '3000',
+        '300',
       ]);
       const output = stdout + stderr;
 
