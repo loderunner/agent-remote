@@ -57,6 +57,10 @@ function parseSSHConfig(): ConnectConfig {
       type: 'string',
       description: 'SSH agent socket path (env: SSH_AUTH_SOCK)',
     })
+    .option('timeout', {
+      type: 'number',
+      description: 'SSH connection timeout in milliseconds (env: SSH_TIMEOUT)',
+    })
     .check(
       (argv: {
         host?: string;
@@ -95,6 +99,7 @@ function parseSSHConfig(): ConnectConfig {
         'private-key',
         'passphrase',
         'agent',
+        'timeout',
       ],
       'SSH Connection Options:',
     )
@@ -112,6 +117,11 @@ function parseSSHConfig(): ConnectConfig {
     username: argv.username as string,
     port: argv.port,
   };
+
+  // Add timeout if specified
+  if (argv.timeout !== undefined) {
+    config.readyTimeout = argv.timeout;
+  }
 
   // Determine authentication method
   if (argv.password) {

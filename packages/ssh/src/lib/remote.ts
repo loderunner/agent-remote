@@ -179,10 +179,7 @@ export class Remote {
       client.on('error', (err) => {
         reject(err);
       });
-      client.connect({
-        readyTimeout: 3000,
-        ...config,
-      });
+      client.connect(config);
     });
 
     const sftp = await new Promise<SFTPWrapper>((resolve, reject) => {
