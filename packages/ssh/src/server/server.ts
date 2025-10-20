@@ -58,7 +58,6 @@ function parseSSHConfig(): ConnectConfig {
       description: 'SSH agent socket path (env: SSH_AUTH_SOCK)',
     })
     .option('timeout', {
-      alias: 't',
       type: 'number',
       description: 'SSH connection timeout in milliseconds (env: SSH_TIMEOUT)',
     })

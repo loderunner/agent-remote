@@ -274,7 +274,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
       vi.stubEnv('SSH_USERNAME', 'envuser');
       vi.stubEnv('SSH_PASSWORD', 'envpass');
 
-      const { stdout, stderr } = await runServer(['--timeout', '3000']);
+      const { stdout, stderr } = await runServer(['--timeout', '300']);
       const output = stdout + stderr;
 
       // Should pass validation
