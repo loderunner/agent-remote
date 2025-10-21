@@ -8,6 +8,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
+import pino from 'pino';
 import type { ConnectConfig } from 'ssh2';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -15,6 +16,15 @@ import { hideBin } from 'yargs/helpers';
 import packageJson from '../../package.json';
 
 import { Remote } from '~/lib/remote';
+
+const logger = pino({
+  transport: {
+    target: 'pino-pretty',
+    options: {
+      destination: 2,
+    },
+  },
+});
 
 /**
  * Finds the first available default SSH private key in the user's .ssh directory.
@@ -218,16 +228,19 @@ async function main() {
     authMethods.push('password');
   }
 
-  console.error('Connecting to SSH host:', {
-    host: sshConfig.host,
-    port: sshConfig.port,
-    username: sshConfig.username,
-    authMethods: authMethods.length > 0 ? authMethods.join(', ') : 'none',
-  });
+  logger.info(
+    {
+      host: sshConfig.host,
+      port: sshConfig.port,
+      username: sshConfig.username,
+      authMethods: authMethods.length > 0 ? authMethods.join(', ') : 'none',
+    },
+    'Connecting to SSH host:',
+  );
 
   // Connect to remote host
   const remote = await Remote.connect(sshConfig);
-  console.error('Connected to remote host');
+  logger.info('Connected to remote host');
 
   // Create MCP server
   const server = new Server(
@@ -367,7 +380,7 @@ async function main() {
   // Connect with stdio transport
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('MCP server connected to stdio');
+  logger.info('MCP server connected to stdio');
 
   // Handle cleanup on exit
   process.on('SIGINT', () => {
@@ -384,9 +397,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(
-    'Failed to start MCP server:',
-    error instanceof Error ? error.message : String(error),
-  );
+  logger.error(error, 'Failed to start MCP server');
   process.exit(1);
 });

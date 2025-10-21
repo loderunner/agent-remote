@@ -95,4 +95,10 @@ export default [
     files: ['**/*.test.ts'],
     ...jestExtended.configs['flat/all'],
   },
+  {
+    files: ['packages/ssh/src/server/**/*.{ts,js,mjs,cjs}'],
+    rules: {
+      'no-console': ['error', { allow: ['error'] }],
+    },
+  },
 ];

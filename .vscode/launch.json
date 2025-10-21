@@ -11,7 +11,8 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": [
         "run",
-        "server:watch",
+        "server",
+        "--help",
         "--host",
         "localhost",
         "--port",
