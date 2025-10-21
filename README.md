@@ -39,3 +39,5 @@ pnpm lint:fix
 ## License
 
 Apache-2.0
+
+Copyright (c) 2025 Charles Francoise
