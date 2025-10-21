@@ -1,8 +1,33 @@
+import fs from 'node:fs/promises';
+import { basename } from 'node:path';
+
 import json from '@rollup/plugin-json';
 import typescript from '@rollup/plugin-typescript';
 import dts from 'rollup-plugin-dts';
 
 import packageJson from './package.json' with { type: 'json' };
+
+function chmod({ mode }) {
+  /** @type {import('rollup').Plugin} */
+  const plugin = {
+    name: 'chmod',
+    async writeBundle(options, bundle) {
+      return Promise.all(
+        Object.entries(bundle).map(async ([filename, output]) => {
+          if (
+            output.type === 'chunk' &&
+            output.isEntry &&
+            filename === basename(options.file)
+          ) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            return fs.chmod(options.file, mode);
+          }
+        }),
+      );
+    },
+  };
+  return plugin;
+}
 
 /** @type {import('rollup').RollupOptions[]} */
 export default [
@@ -47,8 +72,8 @@ export default [
   {
     input: 'src/server/server.ts',
     output: {
-      file: 'dist/server.cjs',
-      format: 'cjs',
+      file: 'dist/remote-ssh-mcp',
+      format: 'esm',
       sourcemap: false,
       banner: '#!/usr/bin/env node',
     },
@@ -61,6 +86,7 @@ export default [
         declarationMap: false,
         sourceMap: false,
       }),
+      chmod({ mode: 0o755 }),
     ],
     external: (source) => {
       return (
