@@ -8,7 +8,8 @@ with remote system access.
 
 - **Bash execution** - Run commands in persistent shell sessions with background
   execution support
-- **File operations** - Read, write, and edit files remotely via SFTP
+- **File operations** - Read, write, and edit files remotely via SFTP (optional,
+  gracefully disabled if SFTP is unavailable)
 - **Search tools** - Grep pattern search and glob file matching
 - **Type-safe** - Full TypeScript support with Zod validation
 - **Agent SDK integration** - Easy integration with Claude Agent SDK via MCP
@@ -69,11 +70,38 @@ ssh-mcp-server
 - `--passphrase` - Passphrase for encrypted private key (or `SSH_PASSPHRASE` env
   var)
 - `--agent` - SSH agent socket path (or `SSH_AUTH_SOCK` env var)
+- `--default-keys` - Automatically try default SSH keys from `~/.ssh`, enabled
+  by default (or `SSH_DEFAULT_KEYS` env var). Use `--no-try-default-keys` to
+  disable.
 - `--timeout, -t` - SSH connection timeout in milliseconds (or `SSH_TIMEOUT` env
   var)
 
 The server exposes all remote tools (bash, read, write, edit, grep, glob, etc.)
 through the MCP protocol.
+
+**Authentication behavior:**
+
+The MCP server mimics OpenSSH's authentication behavior:
+
+1. If you provide `--password` or `--private-key`, it uses that exclusively
+2. If you don't provide explicit credentials, it will:
+   - Try the SSH agent (from `--agent` or `SSH_AUTH_SOCK`)
+   - Automatically fall back to default SSH keys in `~/.ssh/` (id_ed25519,
+     id_ecdsa, id_rsa, id_dsa)
+
+This means you can connect just like OpenSSH without specifying any auth
+options:
+
+```bash
+# Just like: ssh user@example.com
+ssh-mcp-server --host example.com --username user
+```
+
+To disable the automatic default key fallback:
+
+```bash
+ssh-mcp-server --host example.com --username user --no-default-keys
+```
 
 ### Basic Usage
 
@@ -189,7 +217,11 @@ Establishes a connection to a remote SSH server.
 
 **Returns:** A connected `Remote` instance
 
-**Throws:** If the SSH connection or SFTP session fails
+**Throws:** If the SSH connection fails
+
+**Note:** SFTP is attempted but not required. If SFTP is unavailable, the
+connection will still succeed but file operations (read, write, edit) will
+return error messages when called. Bash, grep, and glob tools work without SFTP.
 
 **Example:**
 
@@ -201,11 +233,27 @@ const remote = await Remote.connect({
 });
 ```
 
+#### Instance Properties
+
+##### `hasSftp: boolean`
+
+Indicates whether an SFTP session is available. File operations require SFTP.
+
+**Example:**
+
+```typescript
+if (remote.hasSftp) {
+  await remote.read.handler({ file_path: '/etc/hosts' });
+} else {
+  console.log('File operations not available');
+}
+```
+
 #### Instance Methods
 
 ##### `disconnect(): Promise<void>`
 
-Closes the SSH connection and SFTP session.
+Closes the SSH connection and SFTP session (if present).
 
 **Example:**
 
@@ -467,6 +515,19 @@ const remote = await Remote.connect({
   agent: process.env.SSH_AUTH_SOCK,
 });
 ```
+
+### Default Key Authentication
+
+When using the MCP server (not the library directly), if you don't provide
+explicit credentials, the server automatically tries default SSH keys from
+`~/.ssh/` as a fallback. This mimics OpenSSH behavior:
+
+```bash
+# MCP server will try SSH agent, then fall back to ~/.ssh/id_ed25519, etc.
+ssh-mcp-server --host example.com --username user
+```
+
+This automatic fallback can be disabled with `--no-default-keys`.
 
 ### Advanced Options
 

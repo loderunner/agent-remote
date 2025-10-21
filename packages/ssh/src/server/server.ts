@@ -1,4 +1,6 @@
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
+import { homedir, userInfo } from 'os';
+import { join } from 'path';
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -13,6 +15,34 @@ import { hideBin } from 'yargs/helpers';
 import packageJson from '../../package.json';
 
 import { Remote } from '~/lib/remote';
+
+/**
+ * Finds the first available default SSH private key in the user's .ssh directory.
+ * Mimics OpenSSH's default key search order.
+ *
+ * @returns The content of the first found key, or undefined if none found
+ */
+function findDefaultPrivateKey():
+  | { privateKey: Buffer; source: string }
+  | undefined {
+  const sshDir = join(homedir(), '.ssh');
+  const defaultKeys = ['id_ed25519', 'id_ecdsa', 'id_rsa', 'id_dsa'];
+
+  for (const keyName of defaultKeys) {
+    const keyPath = join(sshDir, keyName);
+    if (existsSync(keyPath)) {
+      try {
+        const privateKey = readFileSync(keyPath);
+        return { privateKey, source: keyPath };
+      } catch {
+        // If we can't read it, skip to next key
+        continue;
+      }
+    }
+  }
+
+  return undefined;
+}
 
 /**
  * Parse SSH configuration from command line arguments and environment variables.
@@ -30,6 +60,7 @@ function parseSSHConfig(): ConnectConfig {
       alias: 'H',
       type: 'string',
       description: 'SSH host (env: SSH_HOST)',
+      demandOption: true,
     })
     .option('port', {
       alias: 'p',
@@ -41,6 +72,7 @@ function parseSSHConfig(): ConnectConfig {
       alias: 'u',
       type: 'string',
       description: 'SSH username (env: SSH_USERNAME)',
+      default: userInfo().username,
     })
     .option('password', {
       type: 'string',
@@ -58,6 +90,12 @@ function parseSSHConfig(): ConnectConfig {
       type: 'string',
       description: 'SSH agent socket path (env: SSH_AUTH_SOCK)',
     })
+    .option('default-keys', {
+      type: 'boolean',
+      description:
+        'Automatically try default SSH keys from ~/.ssh (env: SSH_DEFAULT_KEYS)',
+      default: true,
+    })
     .option('timeout', {
       type: 'number',
       description: 'SSH connection timeout in milliseconds (env: SSH_TIMEOUT)',
@@ -73,11 +111,11 @@ function parseSSHConfig(): ConnectConfig {
         if (!argv.host) {
           throw new Error('SSH host is required (--host or SSH_HOST)');
         }
-        if (!argv.username) {
-          throw new Error(
-            'SSH username is required (--username or SSH_USERNAME)',
-          );
-        }
+        // if (!argv.username) {
+        //   throw new Error(
+        //     'SSH username is required (--username or SSH_USERNAME)',
+        //   );
+        // }
         const hasAuth =
           argv.password ??
           argv['private-key'] ??
@@ -100,6 +138,7 @@ function parseSSHConfig(): ConnectConfig {
         'private-key',
         'passphrase',
         'agent',
+        'default-keys',
         'timeout',
       ],
       'SSH Connection Options:',
@@ -114,8 +153,8 @@ function parseSSHConfig(): ConnectConfig {
     .parseSync();
 
   const config: ConnectConfig = {
-    host: argv.host as string,
-    username: argv.username as string,
+    host: argv.host,
+    username: argv.username,
     port: argv.port,
   };
 
@@ -140,10 +179,21 @@ function parseSSHConfig(): ConnectConfig {
       config.passphrase = argv.passphrase;
     }
   } else {
-    // Fall back to SSH agent (either provided or SSH_AUTH_SOCK)
+    // When no explicit auth is provided, mimic OpenSSH behavior:
+    // 1. Try SSH agent (if available)
+    // 2. Fall back to default private keys in ~/.ssh/ (if enabled)
     const agentPath = argv.agent ?? process.env.SSH_AUTH_SOCK;
     if (agentPath) {
       config.agent = agentPath;
+    }
+
+    // Also try to load default private key as fallback (if enabled)
+    // ssh2 will try agent first, then fall back to privateKey
+    if (argv['default-keys']) {
+      const defaultKey = findDefaultPrivateKey();
+      if (defaultKey) {
+        config.privateKey = defaultKey.privateKey;
+      }
     }
   }
 
@@ -154,9 +204,37 @@ async function main() {
   // Parse SSH configuration
   const sshConfig = parseSSHConfig();
 
+  // Debug: log connection details (but not sensitive auth info)
+  const authMethods = [];
+  if (sshConfig.agent) {
+    const agentStr =
+      typeof sshConfig.agent === 'string' ? sshConfig.agent : 'custom-agent';
+    authMethods.push(`agent (${agentStr})`);
+  }
+  if (sshConfig.privateKey) {
+    authMethods.push('privateKey');
+  }
+  if (sshConfig.password) {
+    authMethods.push('password');
+  }
+
+  console.error('Connecting to SSH host:', {
+    host: sshConfig.host,
+    port: sshConfig.port,
+    username: sshConfig.username,
+    authMethods: authMethods.length > 0 ? authMethods.join(', ') : 'none',
+  });
+
   // Connect to remote host
   const remote = await Remote.connect(sshConfig);
   console.error('Connected to remote host');
+
+  // Check if SFTP is available
+  if (!remote.hasSftp) {
+    console.error(
+      'Warning: SFTP not available - file operations will be disabled',
+    );
+  }
 
   // Create MCP server
   const server = new Server(
@@ -313,6 +391,9 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('Failed to start MCP server:', error);
+  console.error(
+    'Failed to start MCP server:',
+    error instanceof Error ? error.message : String(error),
+  );
   process.exit(1);
 });

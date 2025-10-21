@@ -135,13 +135,13 @@ export type GlobToolDefinition = {
  */
 export class Remote {
   private client: Client;
-  private sftp: SFTPWrapper;
+  private sftp?: SFTPWrapper;
   private bashTool?: BashTool;
   private grepTool?: GrepTool;
   private globTool?: GlobTool;
   private fileTool?: FileTool;
 
-  private constructor(client: Client, sftp: SFTPWrapper) {
+  private constructor(client: Client, sftp?: SFTPWrapper) {
     this.client = client;
     this.sftp = sftp;
   }
@@ -151,7 +151,7 @@ export class Remote {
    *
    * @param config - SSH connection configuration (host, username, auth, etc.)
    * @returns A connected Remote instance
-   * @throws If the SSH connection or SFTP session fails
+   * @throws If the SSH connection fails
    *
    * @example
    * ```typescript
@@ -182,10 +182,12 @@ export class Remote {
       client.connect(config);
     });
 
-    const sftp = await new Promise<SFTPWrapper>((resolve, reject) => {
+    // Try to start SFTP, but don't fail if it's not available
+    const sftp = await new Promise<SFTPWrapper | undefined>((resolve) => {
       client.sftp((err, sftp) => {
         if (err) {
-          reject(err);
+          // SFTP not available, file operations will be disabled
+          resolve(undefined);
           return;
         }
         resolve(sftp);
@@ -193,6 +195,13 @@ export class Remote {
     });
 
     return new Remote(client, sftp);
+  }
+
+  /**
+   * Whether the remote has an SFTP session.
+   */
+  public get hasSftp(): boolean {
+    return this.sftp !== undefined;
   }
 
   /**
@@ -209,7 +218,9 @@ export class Remote {
    * ```
    */
   async disconnect(): Promise<void> {
-    this.sftp.end();
+    if (this.sftp) {
+      this.sftp.end();
+    }
     this.client.end();
   }
 
@@ -387,7 +398,9 @@ export class Remote {
    * Reads files from the remote filesystem.
    */
   get read(): ReadToolDefinition {
-    this.fileTool ??= new FileTool(this.sftp);
+    if (this.sftp) {
+      this.fileTool ??= new FileTool(this.sftp);
+    }
     const tool = this.fileTool;
 
     return {
@@ -396,6 +409,18 @@ export class Remote {
         'Reads a file from the filesystem. Takes an absolute file path and optional offset/limit parameters for partial reads. Returns content with line numbers in cat -n format.',
       inputSchema: fileReadInputSchema.shape,
       handler: async (input: FileReadInput) => {
+        if (!tool) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'File operations are not available: SFTP subsystem not supported by this server',
+              },
+            ],
+            isError: true,
+          };
+        }
+
         try {
           const output = await tool.read(input);
           const lines = output.content.split('\n');
@@ -435,7 +460,9 @@ export class Remote {
    * Writes content to files on the remote filesystem.
    */
   get write(): WriteToolDefinition {
-    this.fileTool ??= new FileTool(this.sftp);
+    if (this.sftp) {
+      this.fileTool ??= new FileTool(this.sftp);
+    }
     const tool = this.fileTool;
 
     return {
@@ -444,6 +471,18 @@ export class Remote {
         'Writes content to a file on the filesystem. Takes an absolute file path and content to write. Creates or overwrites the file.',
       inputSchema: fileWriteInputSchema.shape,
       handler: async (input: FileWriteInput) => {
+        if (!tool) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'File operations are not available: SFTP subsystem not supported by this server',
+              },
+            ],
+            isError: true,
+          };
+        }
+
         try {
           const output = await tool.write(input);
           return {
@@ -475,7 +514,9 @@ export class Remote {
    * Edits files by replacing text on the remote filesystem.
    */
   get edit(): EditToolDefinition {
-    this.fileTool ??= new FileTool(this.sftp);
+    if (this.sftp) {
+      this.fileTool ??= new FileTool(this.sftp);
+    }
     const tool = this.fileTool;
 
     return {
@@ -484,6 +525,18 @@ export class Remote {
         'Edits a file by replacing text. Takes an absolute file path, old_string to find, new_string to replace with, and optional replace_all flag. Returns a unified diff of the changes.',
       inputSchema: fileEditInputSchema.shape,
       handler: async (input: FileEditInput) => {
+        if (!tool) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'File operations are not available: SFTP subsystem not supported by this server',
+              },
+            ],
+            isError: true,
+          };
+        }
+
         try {
           const output = await tool.edit(input);
           let text = `Made ${output.replacements} replacement${output.replacements === 1 ? '' : 's'} in ${input.file_path}`;
