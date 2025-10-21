@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "enabledMcpjsonServers": ["remote-ssh"],
+    "allow": ["mcp__remote-ssh"],
+    "deny": [
+      "Bash",
+      "Edit",
+      "Glob",
+      "Grep",
+      "BashOutput",
+      "KillShell",
+      "Read",
+      "Write"
+    ]
+  }
+}

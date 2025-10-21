@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "remote-ssh": {
+      "command": "remote-ssh-mcp-server",
+      "args": [
+        "--host",
+        "localhost",
+        "--port",
+        "2222",
+        "--username",
+        "dev",
+        "--private-key",
+        "../../sandbox/ssh_key"
+      ]
+    }
+  }
+}

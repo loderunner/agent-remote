@@ -1,0 +1,13 @@
+{
+  "name": "@claude-remote/claude-code-ssh-example",
+  "version": "1.0.0",
+  "description": "Example project for using Claude Code with SSH MCP server",
+  "private": true,
+  "scripts": {
+    "start": "claude"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.0",
+    "@claude-remote/ssh": "link:../../packages/ssh"
+  }
+}
