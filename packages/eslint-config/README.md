@@ -9,20 +9,21 @@ Shared ESLint configuration for Claude Remote projects.
 In your project root or package, create an `eslint.config.js`:
 
 ```js
-import createConfig from '@claude-remote/eslint-config';
+import config from '@claude-remote/eslint-config';
 
-export default createConfig();
+export default config;
 ```
 
 ### Customization
 
-You can extend or override the shared configuration by spreading additional configs:
+You can extend or override the shared configuration by spreading it into an
+array:
 
 ```js
-import createConfig from '@claude-remote/eslint-config';
+import config from '@claude-remote/eslint-config';
 
 export default [
-  ...createConfig(),
+  ...config,
   {
     // Add your custom rules here
     rules: {
@@ -32,24 +33,17 @@ export default [
 ];
 ```
 
-### Options
-
-The `createConfig` function accepts an optional configuration object:
-
-- `additionalIgnores`: Array of additional glob patterns to ignore
-- `parserOptions`: Additional parser options to merge with the default configuration
-
-Example:
+### Adding Ignores
 
 ```js
-import createConfig from '@claude-remote/eslint-config';
+import config from '@claude-remote/eslint-config';
 
-export default createConfig({
-  additionalIgnores: ['**/*.generated.ts'],
-  parserOptions: {
-    // Additional parser options
+export default [
+  ...config,
+  {
+    ignores: ['**/*.generated.ts'],
   },
-});
+];
 ```
 
 ## What's Included
@@ -64,7 +58,8 @@ This configuration includes:
 
 ## Package Dependencies
 
-This package requires the following peer dependencies to be installed in your project:
+This package requires the following peer dependencies to be installed in your
+project:
 
 - `@eslint/js`
 - `@vitest/eslint-plugin`

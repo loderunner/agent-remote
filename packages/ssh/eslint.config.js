@@ -1,4 +1,4 @@
-import createConfig from '@claude-remote/eslint-config';
+import config from '@claude-remote/eslint-config';
 
 /**
  * ESLint configuration for the SSH package
@@ -6,7 +6,7 @@ import createConfig from '@claude-remote/eslint-config';
  * This extends the shared config with package-specific rules
  */
 export default [
-  ...createConfig(),
+  ...config,
   // Add package-specific customizations here
   // Example:
   // {

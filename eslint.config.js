@@ -1,4 +1,3 @@
-import createConfig from '@claude-remote/eslint-config';
+import config from '@claude-remote/eslint-config';
 
-/** @type {import('eslint').Linter.Config[]} */
-export default createConfig();
+export default config;
