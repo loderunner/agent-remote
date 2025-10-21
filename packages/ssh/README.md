@@ -8,8 +8,8 @@ with remote system access.
 
 - **Bash execution** - Run commands in persistent shell sessions with background
   execution support
-- **File operations** - Read, write, and edit files remotely via SFTP (optional,
-  gracefully disabled if SFTP is unavailable)
+- **File operations** - Read, write, and edit files remotely using SFTP when
+  available, automatically falling back to shell commands if SFTP is unavailable
 - **Search tools** - Grep pattern search and glob file matching
 - **Type-safe** - Full TypeScript support with Zod validation
 - **Agent SDK integration** - Easy integration with Claude Agent SDK via MCP
@@ -235,20 +235,6 @@ const remote = await Remote.connect({
 
 #### Instance Properties
 
-##### `hasSftp: boolean`
-
-Indicates whether an SFTP session is available. File operations require SFTP.
-
-**Example:**
-
-```typescript
-if (remote.hasSftp) {
-  await remote.read.handler({ file_path: '/etc/hosts' });
-} else {
-  console.log('File operations not available');
-}
-```
-
 #### Instance Methods
 
 ##### `disconnect(): Promise<void>`
@@ -384,7 +370,8 @@ Searches for patterns in files or directories.
 
 ##### `read: ReadToolDefinition`
 
-Reads files from the remote filesystem.
+Reads files from the remote filesystem. Automatically uses SFTP when available,
+or falls back to `cat` command.
 
 **Input:**
 
@@ -407,9 +394,15 @@ Reads files from the remote filesystem.
 }
 ```
 
+**Implementation:**
+
+- **SFTP mode**: Uses `sftp.readFile()` for direct file access
+- **Shell fallback**: Uses `cat` command to read file contents
+
 ##### `write: WriteToolDefinition`
 
-Writes content to files on the remote filesystem.
+Writes content to files on the remote filesystem. Automatically uses SFTP when
+available, or falls back to `printf` command with proper escaping.
 
 **Input:**
 
@@ -424,13 +417,20 @@ Writes content to files on the remote filesystem.
 
 ```typescript
 {
-  bytes_written: number; // Number of bytes written
+  content: string; // Content that was written
 }
 ```
 
+**Implementation:**
+
+- **SFTP mode**: Uses `sftp.writeFile()` for direct file access
+- **Shell fallback**: Uses `printf '%s' '...'` with single-quote escaping to
+  safely handle special characters, newlines, and unicode
+
 ##### `edit: EditToolDefinition`
 
-Edits files by replacing text on the remote filesystem.
+Edits files by replacing text on the remote filesystem. Automatically uses SFTP
+when available, or falls back to shell commands.
 
 **Input:**
 
@@ -451,6 +451,12 @@ Edits files by replacing text on the remote filesystem.
   diff: StructuredPatch; // Unified diff of changes
 }
 ```
+
+**Implementation:**
+
+- **SFTP mode**: Uses `sftp.readFile()` and `sftp.writeFile()` for file access
+- **Shell fallback**: Uses `cat` to read, performs replacement locally, then
+  uses `printf` to write back
 
 ##### `glob: GlobToolDefinition`
 

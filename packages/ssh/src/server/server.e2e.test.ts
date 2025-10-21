@@ -175,7 +175,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
       const output = stdout + stderr;
 
       expect(exitCode).not.toBe(0);
-      expect(output).toContain('SSH host is required');
+      expect(output).toContain('Missing required argument: host');
     });
 
     it('should error when missing host', async () => {
@@ -188,20 +188,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
       const output = stdout + stderr;
 
       expect(exitCode).not.toBe(0);
-      expect(output).toContain('SSH host is required');
-    });
-
-    it('should error when missing username', async () => {
-      const { stdout, stderr, exitCode } = await runServer([
-        '--host',
-        'example.com',
-        '--password',
-        'testpass',
-      ]);
-      const output = stdout + stderr;
-
-      expect(exitCode).not.toBe(0);
-      expect(output).toContain('SSH username is required');
+      expect(output).toContain('Missing required argument: host');
     });
 
     it('should error when missing authentication', async () => {

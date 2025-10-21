@@ -79,15 +79,18 @@ describe('Remote', () => {
       ).rejects.toThrow('Connection failed');
     });
 
-    it('should handle SFTP connection errors', async () => {
+    it('should handle SFTP connection errors gracefully', async () => {
       mockClient.sftp.mockImplementation((callback: ClientSFTPCallback) => {
         callback(new Error('SFTP failed'), null as unknown as SFTPWrapper);
         return mockClient;
       });
 
-      await expect(
-        Remote.connect({ host: 'localhost', username: 'test' }),
-      ).rejects.toThrow('SFTP failed');
+      // Should connect successfully even if SFTP fails
+      const remote = await Remote.connect({
+        host: 'localhost',
+        username: 'test',
+      });
+      expect(remote).toBeDefined();
     });
 
     it('should provide disconnect function', async () => {

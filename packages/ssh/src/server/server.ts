@@ -229,13 +229,6 @@ async function main() {
   const remote = await Remote.connect(sshConfig);
   console.error('Connected to remote host');
 
-  // Check if SFTP is available
-  if (!remote.hasSftp) {
-    console.error(
-      'Warning: SFTP not available - file operations will be disabled',
-    );
-  }
-
   // Create MCP server
   const server = new Server(
     {

@@ -1,5 +1,5 @@
 import { StructuredPatch, structuredPatch } from 'diff';
-import { SFTPWrapper } from 'ssh2';
+import { Client, SFTPWrapper } from 'ssh2';
 import z, { ZodType } from 'zod';
 
 export type FileReadInput = {
@@ -123,12 +123,23 @@ export type FileEditOutput = {
   diff: StructuredPatch;
 };
 
-export class FileTool {
+/**
+ * Interface for file operations
+ */
+type ReaderWriter = {
+  read(filePath: string): Promise<string>;
+  write(filePath: string, content: string): Promise<void>;
+};
+
+/**
+ * SFTP-based file operations implementation
+ */
+class SFTPReaderWriter implements ReaderWriter {
   constructor(private readonly sftp: SFTPWrapper) {}
 
-  public async read(input: FileReadInput): Promise<FileReadOutput> {
-    const content = await new Promise<string>((resolve, reject) => {
-      this.sftp.readFile(input.file_path, 'utf8', (err, data) => {
+  async read(filePath: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      this.sftp.readFile(filePath, 'utf8', (err, data) => {
         if (err) {
           reject(err);
           return;
@@ -136,6 +147,124 @@ export class FileTool {
         resolve(data.toString());
       });
     });
+  }
+
+  async write(filePath: string, content: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.sftp.writeFile(filePath, content, (err) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve();
+      });
+    });
+  }
+}
+
+/**
+ * Shell command-based file operations implementation
+ */
+class BashReaderWriter implements ReaderWriter {
+  constructor(private readonly client: Client) {}
+
+  async read(filePath: string): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const command = `cat ${JSON.stringify(filePath)}`;
+      this.client.exec(command, (err, channel) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        let output = '';
+        let errorOutput = '';
+
+        channel.on('data', (data: Buffer) => {
+          output += data.toString();
+        });
+
+        channel.stderr.on('data', (data: Buffer) => {
+          errorOutput += data.toString();
+        });
+
+        channel.on('error', (err: unknown) => {
+          reject(err);
+        });
+
+        channel.on('close', (code: number) => {
+          if (code !== 0) {
+            reject(
+              new Error(errorOutput || `Command failed with code ${code}`),
+            );
+            return;
+          }
+          resolve(output);
+        });
+      });
+    });
+  }
+
+  async write(filePath: string, content: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      // Escape single quotes by replacing ' with '\''
+      const escapedContent = content.replace(/'/g, "'\\''");
+      // Use printf %s to write content without adding newlines
+      // Add sync to ensure data is flushed to disk before returning
+      const command = `printf '%s' '${escapedContent}' > ${JSON.stringify(filePath)} && sync`;
+
+      this.client.exec(command, (err, channel) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        let errorOutput = '';
+
+        // Consume stdout (should be empty for redirect)
+        channel.on('data', () => {
+          // Discard stdout
+        });
+
+        channel.stderr.on('data', (data: Buffer) => {
+          errorOutput += data.toString();
+        });
+
+        channel.on('error', (err: unknown) => {
+          reject(err);
+        });
+
+        channel.on('close', (code: number) => {
+          if (code !== 0) {
+            reject(
+              new Error(errorOutput || `Command failed with code ${code}`),
+            );
+            return;
+          }
+          resolve();
+        });
+      });
+    });
+  }
+}
+
+/**
+ * File tool that delegates to either SFTP or shell-based operations
+ */
+export class FileTool {
+  private readonly operations: ReaderWriter;
+
+  constructor(transport: SFTPWrapper | Client) {
+    // Type guard: SFTPWrapper has readFile method, Client has exec method
+    if (transport instanceof Client) {
+      this.operations = new BashReaderWriter(transport);
+    } else {
+      this.operations = new SFTPReaderWriter(transport);
+    }
+  }
+
+  public async read(input: FileReadInput): Promise<FileReadOutput> {
+    const content = await this.operations.read(input.file_path);
 
     const allLines = content.split('\n');
     const totalLines = allLines.length;
@@ -165,15 +294,7 @@ export class FileTool {
   }
 
   public async write(input: FileWriteInput): Promise<FileWriteOutput> {
-    await new Promise<void>((resolve, reject) => {
-      this.sftp.writeFile(input.file_path, input.content, (err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve();
-      });
-    });
+    await this.operations.write(input.file_path, input.content);
 
     return {
       content: input.content,
@@ -184,16 +305,7 @@ export class FileTool {
    * Edits a file by replacing text and generates a unified diff
    */
   public async edit(input: FileEditInput): Promise<FileEditOutput> {
-    // Read the file content
-    const oldContent = await new Promise<string>((resolve, reject) => {
-      this.sftp.readFile(input.file_path, 'utf8', (err, data) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(data.toString());
-      });
-    });
+    const oldContent = await this.operations.read(input.file_path);
 
     // Count replacements and perform the replacement
     let replacements = 0;
@@ -219,16 +331,7 @@ export class FileTool {
       }
     }
 
-    // Write back the modified content
-    await new Promise<void>((resolve, reject) => {
-      this.sftp.writeFile(input.file_path, newContent, (err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve();
-      });
-    });
+    await this.operations.write(input.file_path, newContent);
 
     // Generate unified diff
     const diff = structuredPatch(
