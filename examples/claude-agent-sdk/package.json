@@ -2,6 +2,7 @@
   "name": "claude-agent-sdk-example",
   "version": "1.0.0",
   "description": "Example of using @claude-remote/ssh with Claude Agent SDK",
+  "license": "Apache-2.0",
   "type": "module",
   "private": true,
   "scripts": {

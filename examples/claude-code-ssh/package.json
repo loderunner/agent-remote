@@ -2,6 +2,7 @@
   "name": "@claude-remote/claude-code-ssh-example",
   "version": "1.0.0",
   "description": "Example project for using Claude Code with SSH MCP server",
+  "license": "Apache-2.0",
   "private": true,
   "scripts": {
     "start": "claude"

@@ -2,6 +2,7 @@
   "name": "claude-remote",
   "version": "1.0.0",
   "description": "Remote execution tools for Claude AI agents",
+  "license": "Apache-2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,7 +16,6 @@
     "clean": "pnpm -r clean",
     "clean:all": "git clean -fdx"
   },
-  "license": "UNLICENSED",
   "packageManager": "pnpm@10.18.0",
   "devDependencies": {
     "@eslint/js": "^9.37.0",
