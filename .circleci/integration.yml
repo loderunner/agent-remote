@@ -7,6 +7,10 @@ executors:
   node:
     docker:
       - image: cimg/node:24.9
+  node-with-sandbox:
+    docker:
+      - image: cimg/node:24.9
+      - image: loderunner/claude-remote-sandbox:latest
 
 jobs:
   lint:
@@ -17,13 +21,20 @@ jobs:
       - node/install-packages:
           pkg-manager: pnpm
       - run: pnpm lint
-  test:
+  build-sandbox:
     executor: node
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: cd sandbox && docker compose up -d
+      - run: cd sandbox && docker build -t claude-remote-sandbox:latest .
+      - run:
+          echo $DOCKER_AUTH_TOKEN | docker login -u loderunner --password-stdin
+      - run: docker push loderunner/claude-remote-sandbox:latest
+  test:
+    executor: node
+    steps:
+      - checkout
       - node/install-pnpm
       - node/install-packages:
           pkg-manager: pnpm
@@ -41,5 +52,8 @@ workflows:
   integration:
     jobs:
       - lint
-      - test
+      - build-sandbox
+      - test:
+          requires:
+            - build-sandbox
       - build
