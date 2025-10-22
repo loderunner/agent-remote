@@ -9,6 +9,7 @@ const test = {
 
 export default defineConfig({
   test: {
+    slowTestThreshold: 20000,
     projects: [
       {
         test: {

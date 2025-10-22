@@ -35,7 +35,7 @@ jobs:
       - run: docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}\t{{.Networks}}"
       - node/install:
           install-pnpm: true
-          node-version: 24.9
+          node-version: '24.9'
       - node/install-packages:
           pkg-manager: pnpm
       - run: pnpm test
