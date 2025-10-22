@@ -21,6 +21,9 @@ jobs:
     executor: node
     steps:
       - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run: cd sandbox && docker compose up -d
       - node/install-pnpm
       - node/install-packages:
           pkg-manager: pnpm
