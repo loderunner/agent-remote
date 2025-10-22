@@ -7,10 +7,6 @@ executors:
   node:
     docker:
       - image: cimg/node:24.9
-  node-with-sandbox:
-    docker:
-      - image: cimg/node:24.9
-      - image: loderunner/claude-remote-sandbox:latest
 
 jobs:
   lint:
@@ -31,10 +27,15 @@ jobs:
       - run: echo $DOCKER_AUTH_TOKEN | docker login -u loderunner --password-stdin
       - run: docker push loderunner/claude-remote-sandbox:latest
   test:
-    executor: node-with-sandbox
+    machine:
+      image: ubuntu-2404:2025.09.1
     steps:
       - checkout
-      - node/install-pnpm
+      - run: cd sandbox && docker compose up -d
+      - run: docker ps --format "table {{.ID}}\t{{.Image}}\t{{.Names}}\t{{.Networks}}"
+      - node/install:
+          install-pnpm: true
+          node-version: 24.9
       - node/install-packages:
           pkg-manager: pnpm
       - run: pnpm test
