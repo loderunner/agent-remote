@@ -5,16 +5,13 @@ services:
       dockerfile: Dockerfile
     container_name: sandbox
     ports:
-      - '2222:22'
-      - '6060:6060'
+      - '2222:2222'
     volumes:
       - ./ssh_key.pub:/home/dev/.ssh/authorized_keys:ro
       - ./fixtures:/home/dev/fixtures
       - dev-home:/home/dev/workspace
-      - ssh-host-keys:/etc/ssh
     restart: unless-stopped
     hostname: sandbox
 
 volumes:
   dev-home:
-  ssh-host-keys:
