@@ -36,7 +36,8 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run: cd sandbox && docker compose up -d
+      - run: cd sandbox && docker build -t sandbox .
+      - run: docker run -d -p 2222:22 sandbox
       - run: docker ps -a
       - node/install-pnpm
       - node/install-packages:
