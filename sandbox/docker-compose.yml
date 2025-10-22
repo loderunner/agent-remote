@@ -9,9 +9,11 @@ services:
     volumes:
       - ./ssh_key.pub:/home/dev/.ssh/authorized_keys:ro
       - ./fixtures:/home/dev/fixtures
+      - empty-fixtures:/home/dev/fixtures/empty
       - dev-home:/home/dev/workspace
     restart: unless-stopped
     hostname: sandbox
 
 volumes:
   dev-home:
+  empty-fixtures:

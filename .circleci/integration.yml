@@ -17,15 +17,6 @@ jobs:
       - node/install-packages:
           pkg-manager: pnpm
       - run: pnpm lint
-  build-sandbox:
-    executor: node
-    steps:
-      - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run: cd sandbox && docker build -t loderunner/claude-remote-sandbox:latest .
-      - run: echo $DOCKER_AUTH_TOKEN | docker login -u loderunner --password-stdin
-      - run: docker push loderunner/claude-remote-sandbox:latest
   test:
     machine:
       image: ubuntu-2404:2025.09.1
@@ -52,8 +43,5 @@ workflows:
   integration:
     jobs:
       - lint
-      - build-sandbox
-      - test:
-          requires:
-            - build-sandbox
+      - test
       - build
