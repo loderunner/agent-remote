@@ -31,9 +31,11 @@ jobs:
       - run: echo $DOCKER_AUTH_TOKEN | docker login -u loderunner --password-stdin
       - run: docker push loderunner/claude-remote-sandbox:latest
   test:
-    executor: node-with-sandbox
+    executor: node
     steps:
       - checkout
+      - run: cd sandbox && docker compose up -d
+      - run: docker ps -a
       - node/install-pnpm
       - node/install-packages:
           pkg-manager: pnpm
@@ -51,8 +53,9 @@ workflows:
   integration:
     jobs:
       - lint
-      - build-sandbox
-      - test:
-          requires:
-            - build-sandbox
+      - test
+      # - build-sandbox
+      # - test:
+      #     requires:
+      #       - build-sandbox
       - build
