@@ -113,6 +113,8 @@ export class GrepTool {
   constructor(private readonly client: Client) {}
 
   public async grep(input: GrepInput): Promise<GrepOutput> {
+    grepInputSchema.parse(input);
+
     const args: string[] = ['grep', '-r'];
 
     if (input.glob) {

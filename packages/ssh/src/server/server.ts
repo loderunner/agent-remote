@@ -12,6 +12,7 @@ import pino from 'pino';
 import type { ConnectConfig } from 'ssh2';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 import packageJson from '../../package.json';
 
@@ -267,66 +268,42 @@ async function main() {
         {
           name: remote.bash.name,
           description: remote.bash.description,
-          inputSchema: {
-            type: 'object',
-            properties: remote.bash.inputSchema,
-          },
+          inputSchema: zodToJsonSchema(remote.bash.inputSchema),
         },
         {
           name: remote.bashOutput.name,
           description: remote.bashOutput.description,
-          inputSchema: {
-            type: 'object',
-            properties: remote.bashOutput.inputSchema,
-          },
+          inputSchema: zodToJsonSchema(remote.bashOutput.inputSchema),
         },
         {
           name: remote.killBash.name,
           description: remote.killBash.description,
-          inputSchema: {
-            type: 'object',
-            properties: remote.killBash.inputSchema,
-          },
+          inputSchema: zodToJsonSchema(remote.killBash.inputSchema),
         },
         {
           name: remote.grep.name,
           description: remote.grep.description,
-          inputSchema: {
-            type: 'object',
-            properties: remote.grep.inputSchema,
-          },
+          inputSchema: zodToJsonSchema(remote.grep.inputSchema),
         },
         {
           name: remote.read.name,
           description: remote.read.description,
-          inputSchema: {
-            type: 'object',
-            properties: remote.read.inputSchema,
-          },
+          inputSchema: zodToJsonSchema(remote.read.inputSchema),
         },
         {
           name: remote.write.name,
           description: remote.write.description,
-          inputSchema: {
-            type: 'object',
-            properties: remote.write.inputSchema,
-          },
+          inputSchema: zodToJsonSchema(remote.write.inputSchema),
         },
         {
           name: remote.edit.name,
           description: remote.edit.description,
-          inputSchema: {
-            type: 'object',
-            properties: remote.edit.inputSchema,
-          },
+          inputSchema: zodToJsonSchema(remote.edit.inputSchema),
         },
         {
           name: remote.glob.name,
           description: remote.glob.description,
-          inputSchema: {
-            type: 'object',
-            properties: remote.glob.inputSchema,
-          },
+          inputSchema: zodToJsonSchema(remote.glob.inputSchema),
         },
       ],
     };

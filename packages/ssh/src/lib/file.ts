@@ -264,6 +264,8 @@ export class FileTool {
   }
 
   public async read(input: FileReadInput): Promise<FileReadOutput> {
+    fileReadInputSchema.parse(input);
+
     const content = await this.operations.read(input.file_path);
 
     const allLines = content.split('\n');
@@ -294,6 +296,8 @@ export class FileTool {
   }
 
   public async write(input: FileWriteInput): Promise<FileWriteOutput> {
+    fileWriteInputSchema.parse(input);
+
     await this.operations.write(input.file_path, input.content);
 
     return {
@@ -305,6 +309,8 @@ export class FileTool {
    * Edits a file by replacing text and generates a unified diff
    */
   public async edit(input: FileEditInput): Promise<FileEditOutput> {
+    fileEditInputSchema.parse(input);
+
     const oldContent = await this.operations.read(input.file_path);
 
     // Count replacements and perform the replacement

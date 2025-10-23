@@ -2,7 +2,8 @@ import { createSdkMcpServer, tool } from '@anthropic-ai/claude-agent-sdk';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { formatPatch } from 'diff';
 import { Client, ConnectConfig, SFTPWrapper } from 'ssh2';
-import type { ZodObject, ZodRawShape } from 'zod';
+import { ZodError } from 'zod';
+import { fromError } from 'zod-validation-error/v3';
 
 import packageJson from '../../package.json';
 
@@ -27,16 +28,13 @@ import {
 import { GlobInput, GlobTool, globInputSchema } from './glob';
 import { GrepInput, GrepTool, grepInputSchema } from './grep';
 
-type InferShape<T extends ZodObject<ZodRawShape>> =
-  T extends ZodObject<infer S> ? S : never;
-
 /**
  * Tool definition for bash command execution
  */
 export type BashToolDefinition = {
   name: 'bash';
   description: string;
-  inputSchema: InferShape<typeof bashInputSchema>;
+  inputSchema: typeof bashInputSchema;
   handler: (input: BashInput) => Promise<CallToolResult>;
 };
 
@@ -46,7 +44,7 @@ export type BashToolDefinition = {
 export type BashOutputToolDefinition = {
   name: 'bash-output';
   description: string;
-  inputSchema: InferShape<typeof bashOutputInputSchema>;
+  inputSchema: typeof bashOutputInputSchema;
   handler: (input: BashOutputInput) => Promise<CallToolResult>;
 };
 
@@ -56,7 +54,7 @@ export type BashOutputToolDefinition = {
 export type KillBashToolDefinition = {
   name: 'kill-bash';
   description: string;
-  inputSchema: InferShape<typeof killShellInputSchema>;
+  inputSchema: typeof killShellInputSchema;
   handler: (input: KillShellInput) => Promise<CallToolResult>;
 };
 
@@ -66,7 +64,7 @@ export type KillBashToolDefinition = {
 export type GrepToolDefinition = {
   name: 'grep';
   description: string;
-  inputSchema: InferShape<typeof grepInputSchema>;
+  inputSchema: typeof grepInputSchema;
   handler: (input: GrepInput) => Promise<CallToolResult>;
 };
 
@@ -76,7 +74,7 @@ export type GrepToolDefinition = {
 export type ReadToolDefinition = {
   name: 'read';
   description: string;
-  inputSchema: InferShape<typeof fileReadInputSchema>;
+  inputSchema: typeof fileReadInputSchema;
   handler: (input: FileReadInput) => Promise<CallToolResult>;
 };
 
@@ -86,7 +84,7 @@ export type ReadToolDefinition = {
 export type WriteToolDefinition = {
   name: 'write';
   description: string;
-  inputSchema: InferShape<typeof fileWriteInputSchema>;
+  inputSchema: typeof fileWriteInputSchema;
   handler: (input: FileWriteInput) => Promise<CallToolResult>;
 };
 
@@ -96,7 +94,7 @@ export type WriteToolDefinition = {
 export type EditToolDefinition = {
   name: 'edit';
   description: string;
-  inputSchema: InferShape<typeof fileEditInputSchema>;
+  inputSchema: typeof fileEditInputSchema;
   handler: (input: FileEditInput) => Promise<CallToolResult>;
 };
 
@@ -106,9 +104,18 @@ export type EditToolDefinition = {
 export type GlobToolDefinition = {
   name: 'glob';
   description: string;
-  inputSchema: InferShape<typeof globInputSchema>;
+  inputSchema: typeof globInputSchema;
   handler: (input: GlobInput) => Promise<CallToolResult>;
 };
+
+function formatErrorMessage(error: unknown): string {
+  if (error instanceof ZodError) {
+    return fromError(error).toString();
+  } else if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
 
 /**
  * Remote SSH connection manager that provides tools for executing commands and
@@ -230,7 +237,7 @@ export class Remote {
       name: 'bash',
       description:
         'Executes a bash command in a persistent shell session with optional timeout. For terminal operations like git, npm, docker, etc. DO NOT use for file operations - use specialized tools instead.',
-      inputSchema: bashInputSchema.shape,
+      inputSchema: bashInputSchema,
       handler: async (input: BashInput) => {
         try {
           const output = await tool.execute(input);
@@ -248,7 +255,7 @@ export class Remote {
             content: [
               {
                 type: 'text',
-                text: `Failed to execute bash command: ${error instanceof Error ? error.message : String(error)}`,
+                text: `Failed to execute bash command: ${formatErrorMessage(error)}`,
               },
             ],
             isError: true,
@@ -270,7 +277,7 @@ export class Remote {
       name: 'bash-output',
       description:
         'Retrieves output from a running or completed background bash shell. Takes a shell_id parameter identifying the shell. Always returns only new output since the last check. Returns command output along with shell status.',
-      inputSchema: bashOutputInputSchema.shape,
+      inputSchema: bashOutputInputSchema,
       handler: async (input: BashOutputInput) => {
         try {
           const output = await tool.getOutput(input);
@@ -288,7 +295,7 @@ export class Remote {
             content: [
               {
                 type: 'text',
-                text: `Failed to retrieve bash output: ${error instanceof Error ? error.message : String(error)}`,
+                text: `Failed to retrieve bash output: ${formatErrorMessage(error)}`,
               },
             ],
             isError: true,
@@ -310,7 +317,7 @@ export class Remote {
       name: 'kill-bash',
       description:
         'Kills a running background shell by its ID. Takes a shell_id parameter identifying the shell to kill, and an optional signal parameter to send to the shell. Returns a success or failure status.',
-      inputSchema: killShellInputSchema.shape,
+      inputSchema: killShellInputSchema,
       handler: async (input: KillShellInput) => {
         try {
           const output = await tool.killShell(input);
@@ -328,7 +335,7 @@ export class Remote {
             content: [
               {
                 type: 'text',
-                text: `Failed to kill bash shell: ${error instanceof Error ? error.message : String(error)}`,
+                text: `Failed to kill bash shell: ${formatErrorMessage(error)}`,
               },
             ],
             isError: true,
@@ -350,7 +357,7 @@ export class Remote {
       name: 'grep',
       description:
         'Searches for a pattern in a file or directory. Takes a pattern parameter to search for, and an optional path parameter to search in. Returns a list of files that match the pattern.',
-      inputSchema: grepInputSchema.shape,
+      inputSchema: grepInputSchema,
       handler: async (input: GrepInput) => {
         try {
           const output = await tool.grep(input);
@@ -376,7 +383,7 @@ export class Remote {
             content: [
               {
                 type: 'text',
-                text: `Failed to grep: ${error instanceof Error ? error.message : String(error)}`,
+                text: `Failed to grep: ${formatErrorMessage(error)}`,
               },
             ],
             isError: true,
@@ -398,7 +405,7 @@ export class Remote {
       name: 'read',
       description:
         'Reads a file from the filesystem. Takes an absolute file path and optional offset/limit parameters for partial reads. Returns content with line numbers in cat -n format.',
-      inputSchema: fileReadInputSchema.shape,
+      inputSchema: fileReadInputSchema,
       handler: async (input: FileReadInput) => {
         try {
           const output = await tool.read(input);
@@ -424,7 +431,7 @@ export class Remote {
             content: [
               {
                 type: 'text',
-                text: `Failed to read file: ${error instanceof Error ? error.message : String(error)}`,
+                text: `Failed to read file: ${formatErrorMessage(error)}`,
               },
             ],
             isError: true,
@@ -446,7 +453,7 @@ export class Remote {
       name: 'write',
       description:
         'Writes content to a file on the filesystem. Takes an absolute file path and content to write. Creates or overwrites the file.',
-      inputSchema: fileWriteInputSchema.shape,
+      inputSchema: fileWriteInputSchema,
       handler: async (input: FileWriteInput) => {
         try {
           const output = await tool.write(input);
@@ -464,7 +471,7 @@ export class Remote {
             content: [
               {
                 type: 'text',
-                text: `Failed to write file: ${error instanceof Error ? error.message : String(error)}`,
+                text: `Failed to write file: ${formatErrorMessage(error)}`,
               },
             ],
             isError: true,
@@ -486,7 +493,7 @@ export class Remote {
       name: 'edit',
       description:
         'Edits a file by replacing text. Takes an absolute file path, old_string to find, new_string to replace with, and optional replace_all flag. Returns a unified diff of the changes.',
-      inputSchema: fileEditInputSchema.shape,
+      inputSchema: fileEditInputSchema,
       handler: async (input: FileEditInput) => {
         try {
           const output = await tool.edit(input);
@@ -511,7 +518,7 @@ export class Remote {
             content: [
               {
                 type: 'text',
-                text: `Failed to edit file: ${error instanceof Error ? error.message : String(error)}`,
+                text: `Failed to edit file: ${formatErrorMessage(error)}`,
               },
             ],
             isError: true,
@@ -533,7 +540,7 @@ export class Remote {
       name: 'glob',
       description:
         'Searches for files matching a glob pattern. Takes an absolute base path and a glob pattern supporting modern features like brace expansion, globstar (**), and POSIX character classes. Returns a list of matching file paths.',
-      inputSchema: globInputSchema.shape,
+      inputSchema: globInputSchema,
       handler: async (input: GlobInput) => {
         try {
           const output = await tool.glob(input);
@@ -552,7 +559,7 @@ export class Remote {
             content: [
               {
                 type: 'text',
-                text: `Failed to glob: ${error instanceof Error ? error.message : String(error)}`,
+                text: `Failed to glob: ${formatErrorMessage(error)}`,
               },
             ],
             isError: true,
@@ -590,49 +597,49 @@ export class Remote {
         tool(
           this.bash.name,
           this.bash.description,
-          this.bash.inputSchema,
-          this.bash.handler,
+          this.bash.inputSchema.shape,
+          (args: BashInput) => this.bash.handler(args),
         ),
         tool(
           this.bashOutput.name,
           this.bashOutput.description,
-          this.bashOutput.inputSchema,
+          this.bashOutput.inputSchema.shape,
           (args: BashOutputInput) => this.bashOutput.handler(args),
         ),
         tool(
           this.killBash.name,
           this.killBash.description,
-          this.killBash.inputSchema,
+          this.killBash.inputSchema.shape,
           this.killBash.handler,
         ),
         tool(
           this.grep.name,
           this.grep.description,
-          this.grep.inputSchema,
+          this.grep.inputSchema.shape,
           this.grep.handler,
         ),
         tool(
           this.read.name,
           this.read.description,
-          this.read.inputSchema,
+          this.read.inputSchema.shape,
           this.read.handler,
         ),
         tool(
           this.write.name,
           this.write.description,
-          this.write.inputSchema,
+          this.write.inputSchema.shape,
           this.write.handler,
         ),
         tool(
           this.edit.name,
           this.edit.description,
-          this.edit.inputSchema,
+          this.edit.inputSchema.shape,
           this.edit.handler,
         ),
         tool(
           this.glob.name,
           this.glob.description,
-          this.glob.inputSchema,
+          this.glob.inputSchema.shape,
           this.glob.handler,
         ),
       ],
