@@ -174,6 +174,8 @@ export class BashTool {
   constructor(private readonly client: Client) {}
 
   public async execute(input: BashInput): Promise<BashOutput> {
+    bashInputSchema.parse(input);
+
     if (input.run_in_background) {
       return this.executeInBackground(input);
     }
@@ -384,6 +386,8 @@ export class BashTool {
   }
 
   public async getOutput(input: BashOutputInput): Promise<BashOutputOutput> {
+    bashOutputInputSchema.parse(input);
+
     const shell = this.shells.get(input.shell_id);
     if (!shell) {
       throw new Error('Shell not found');
@@ -406,6 +410,8 @@ export class BashTool {
   }
 
   public async killShell(input: KillShellInput): Promise<KillShellOutput> {
+    killShellInputSchema.parse(input);
+
     const shell = this.shells.get(input.shell_id);
     if (!shell) {
       return { killed: false };

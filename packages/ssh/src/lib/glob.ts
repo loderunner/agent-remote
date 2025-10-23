@@ -52,6 +52,8 @@ export class GlobTool {
    * - Recurses into hidden subdirectories
    */
   public async glob(input: GlobInput): Promise<GlobOutput> {
+    globInputSchema.parse(input);
+
     const isRecursive = input.pattern.includes('**');
     const hasPathSeparator = input.pattern.includes('/');
 
