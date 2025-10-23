@@ -65,6 +65,11 @@ function parseSSHConfig(): ConnectConfig {
     .help('help')
     .alias('help', 'h')
     .alias('version', 'V')
+    .option('debug', {
+      type: 'boolean',
+      description: 'Enable debug output',
+      default: false,
+    })
     .env('SSH')
     .option('host', {
       alias: 'H',
@@ -162,6 +167,10 @@ function parseSSHConfig(): ConnectConfig {
     )
     .parseSync();
 
+  if (argv.debug) {
+    logger.level = 'debug';
+  }
+
   const config: ConnectConfig = {
     host: argv.host,
     username: argv.username,
@@ -256,7 +265,8 @@ async function main() {
   );
 
   // Register tool list handler
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
+  server.setRequestHandler(ListToolsRequestSchema, async (req) => {
+    logger.debug({ params: req.params }, 'Received list tools request');
     return {
       tools: [
         {
@@ -329,6 +339,7 @@ async function main() {
 
   // Register tool call handler
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    logger.debug({ params: request.params }, 'Received tool call request');
     const { name, arguments: args } = request.params;
 
     try {
@@ -363,8 +374,10 @@ async function main() {
           throw new Error(`Unknown tool: ${name}`);
       }
 
+      logger.debug({ result }, 'Tool call result');
       return result;
     } catch (error) {
+      logger.error({ error }, 'Error in tool call');
       return {
         content: [
           {
@@ -384,12 +397,14 @@ async function main() {
 
   // Handle cleanup on exit
   process.on('SIGINT', () => {
+    logger.info('Received SIGINT, disconnecting from remote host');
     void remote.disconnect().then(() => {
       process.exit(0);
     });
   });
 
   process.on('SIGTERM', () => {
+    logger.info('Received SIGTERM, disconnecting from remote host');
     void remote.disconnect().then(() => {
       process.exit(0);
     });

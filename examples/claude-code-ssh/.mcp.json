@@ -3,6 +3,7 @@
     "remote-ssh": {
       "command": "remote-ssh-mcp",
       "args": [
+        "--debug",
         "--host",
         "localhost",
         "--port",
