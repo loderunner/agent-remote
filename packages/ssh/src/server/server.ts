@@ -126,11 +126,6 @@ function parseSSHConfig(): ConnectConfig {
         if (!argv.host) {
           throw new Error('SSH host is required (--host or SSH_HOST)');
         }
-        // if (!argv.username) {
-        //   throw new Error(
-        //     'SSH username is required (--username or SSH_USERNAME)',
-        //   );
-        // }
         const hasAuth =
           argv.password ??
           argv['private-key'] ??
