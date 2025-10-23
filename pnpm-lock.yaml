@@ -117,9 +117,6 @@ importers:
       rollup-plugin-dts:
         specifier: ^6.2.3
         version: 6.2.3(rollup@4.52.5)(typescript@5.9.3)
-      tinybench:
-        specifier: ^5.0.1
-        version: 5.0.1
       tsx:
         specifier: ^4.20.6
         version: 4.20.6
@@ -2271,10 +2268,6 @@ packages:
 
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
-
-  tinybench@5.0.1:
-    resolution: {integrity: sha512-aNVgWQZY4veCZLQJRftDA1X9OoLUIjDWNfC90nledkX7Lx205IpSEFYnsu4slyofoPGpJ+NIQj+BNSt4U5edMg==}
-    engines: {node: '>=20.0.0'}
 
   tinyexec@0.3.2:
     resolution: {integrity: sha512-KQQR9yN7R5+OSwaK0XQoj22pwHoTlgYqmUscPYoknOoWCWfj/5/ABTMRi69FrKU5ffPVh5QcFikpWJI/P1ocHA==}
@@ -4786,8 +4779,6 @@ snapshots:
       real-require: 0.2.0
 
   tinybench@2.9.0: {}
-
-  tinybench@5.0.1: {}
 
   tinyexec@0.3.2: {}
 
