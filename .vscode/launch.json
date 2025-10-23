@@ -12,7 +12,6 @@
       "runtimeArgs": [
         "run",
         "server",
-        "--help",
         "--host",
         "localhost",
         "--port",

@@ -167,14 +167,6 @@ type Shell = BashOutputOutput & {
   channel: ClientChannel;
 };
 
-async function flush(shell: ClientChannel): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 200));
-  let buf: Buffer | null;
-  do {
-    buf = shell.stdout.read() as Buffer | null;
-  } while (buf !== null && buf.length > 0);
-}
-
 export class BashTool {
   private shell: ClientChannel | null = null;
   private readonly shells = new Map<string, Shell>();
@@ -194,7 +186,7 @@ export class BashTool {
       this.shell = await new Promise<ClientChannel>((resolve, reject) => {
         this.client.shell(
           {
-            modes: { ECHO: 0, ONLRET: 0, ONLCR: 0, OPOST: 0 },
+            modes: { ECHO: 0, ONLRET: 0, ONLCR: 0 },
             term: 'dumb',
           },
           (err, channel) => {
@@ -211,8 +203,6 @@ export class BashTool {
       });
     }
 
-    await flush(this.shell);
-
     return this.shell;
   }
 
@@ -221,42 +211,67 @@ export class BashTool {
     const shell = await this.init();
 
     return new Promise((resolve, reject) => {
+      const startMarker = `__CMD_START_${Date.now()}_${nanoid()}__`;
       const endMarker = `__CMD_END_${Date.now()}_${nanoid()}__`;
-      const command = input.command + ';' + `echo "${endMarker}:$?"`;
+      const command =
+        `echo "${startMarker}"; ` + input.command + `; echo "${endMarker}:$?"`;
 
-      let output = '';
-      let exitCode: number;
+      let buffer = '';
       let timedOut = false;
 
       const onData = (data: Buffer) => {
-        const lines = data.toString().split('\n');
-        for (const line of lines) {
-          // If we've seen the end marker, stop listening for data and resolve
-          if (line.startsWith(endMarker)) {
-            const [_, code] = line.split(':');
-            exitCode = Number.parseInt(code);
-            this.shell?.removeListener('data', onData);
-            this.shell?.removeListener('error', onError);
-
-            // If already timed out, we were just cleaning up - don't resolve again
-            if (timedOut) {
-              return;
-            }
-
-            resolve({
-              output,
-              exitCode: Number.isNaN(exitCode) ? undefined : exitCode,
-            });
-            return;
-          }
-
-          // Don't accumulate output after timeout, just consume it
-          if (timedOut) {
-            continue;
-          }
-
-          output += line + '\n';
+        // Don't accumulate output after timeout, just consume it
+        if (timedOut) {
+          return;
         }
+
+        // Accumulate data into buffer
+        buffer += data.toString();
+
+        // Check if we've received the start marker first
+        const startIndex = buffer.indexOf(startMarker);
+        if (startIndex === -1) {
+          return;
+        }
+
+        // Then look for end marker AFTER the start marker
+        const endIndex = buffer.indexOf(endMarker, startIndex);
+        if (endIndex === -1) {
+          return;
+        }
+
+        // Wait for newline after end marker
+        // The end marker format is: __CMD_END_xxx__:exit_code\n
+        const markerEnd = endIndex + endMarker.length;
+        const newlineIndex = buffer.indexOf('\n', markerEnd);
+        if (newlineIndex === -1) {
+          return; // Full end marker hasn't arrived yet
+        }
+
+        // Extract output between start and end markers
+        // Skip the start marker line and any newlines after it
+        const afterStart = startIndex + startMarker.length;
+        const nextLineAfterStart = buffer.indexOf('\n', afterStart);
+        const outputStart =
+          nextLineAfterStart !== -1 ? nextLineAfterStart + 1 : afterStart;
+        const output = buffer.slice(outputStart, endIndex);
+
+        // Extract exit code between marker and newline (e.g., ":0")
+        const exitCodePart = buffer.slice(markerEnd, newlineIndex);
+        const colonIndex = exitCodePart.indexOf(':');
+        const exitCode =
+          colonIndex !== -1
+            ? Number.parseInt(exitCodePart.slice(colonIndex + 1))
+            : undefined;
+
+        this.shell?.removeListener('data', onData);
+        this.shell?.removeListener('error', onError);
+
+        const trimmed = output.trim();
+        resolve({
+          output: trimmed ? trimmed + '\n' : '',
+          exitCode: Number.isNaN(exitCode) ? undefined : exitCode,
+        });
       };
       const onError = (err: unknown) => {
         this.shell?.removeListener('data', onData);
@@ -279,6 +294,9 @@ export class BashTool {
           this.shell?.removeListener('data', onData);
           this.shell?.removeListener('error', onError);
         }, 500);
+
+        // Extract output before the interrupt
+        const output = buffer.slice(0, buffer.lastIndexOf('\n') + 1);
 
         // Resolve immediately but listeners stay active to clean up
         resolve({

@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "remote-ssh": {
-      "command": "remote-ssh-mcp-server",
+      "command": "remote-ssh-mcp",
       "args": [
         "--host",
         "localhost",
