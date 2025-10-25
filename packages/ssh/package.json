@@ -65,6 +65,9 @@
     "rimraf": "^6.0.1",
     "rollup": "^4.52.4",
     "rollup-plugin-dts": "^6.2.3",
-    "tsx": "^4.20.6"
+    "vitest": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "tslib": "catalog:"
   }
 }
