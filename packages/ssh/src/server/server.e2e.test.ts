@@ -8,14 +8,11 @@
  * pnpm test:e2e
  */
 
-import { exec, execFile } from 'child_process';
-import { mkdtemp, rm } from 'fs/promises';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 
+import { build } from 'tsdown';
 import {
-  afterAll,
   afterEach,
   beforeAll,
   beforeEach,
@@ -25,11 +22,9 @@ import {
   vi,
 } from 'vitest';
 
-const execAsync = promisify(exec);
-const execFileAsync = promisify(execFile);
+import { serverTarget } from '../../tsdown.config';
 
-let tempDir: string;
-let SERVER_PATH: string;
+const execFileAsync = promisify(execFile);
 
 /**
  * Helper to run the server with args and capture output.
@@ -41,7 +36,7 @@ async function runServer(
   try {
     const { stdout, stderr } = await execFileAsync(
       'node',
-      [SERVER_PATH, ...args],
+      ['dist/server.js', ...args],
       {
         env: process.env,
         timeout: 5000,
@@ -78,21 +73,11 @@ describe('MCP Server Executable - End-to-End Tests', () => {
    * with the user's actual build in dist/.
    */
   beforeAll(async () => {
-    // Create temporary directory
-    tempDir = await mkdtemp(join(tmpdir(), 'ssh-server-test-'));
-    SERVER_PATH = join(tempDir, 'server.cjs');
-
     try {
-      const packageDir = new URL('../..', import.meta.url).pathname;
+      // Build the project
+      await build({ ...serverTarget, logLevel: 'silent' });
 
-      // Build using rollup with custom output to temp directory
-      await execAsync(
-        `npx rollup -c --input src/server/server.ts --file ${SERVER_PATH} --format cjs --banner "#!/usr/bin/env node"`,
-        {
-          cwd: packageDir,
-          timeout: 120000,
-        },
-      );
+      // Use the built executable
     } catch (error) {
       const execError = error as { stdout?: string; stderr?: string };
       const errorMessage = [
@@ -105,15 +90,6 @@ describe('MCP Server Executable - End-to-End Tests', () => {
       throw new Error(errorMessage);
     }
   }, 120000);
-
-  /**
-   * Clean up temporary build after all tests complete.
-   */
-  afterAll(async () => {
-    if (tempDir) {
-      await rm(tempDir, { recursive: true, force: true });
-    }
-  });
 
   /**
    * Unset SSH_AUTH_SOCK before each test to ensure clean environment.
@@ -136,7 +112,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
       const output = stdout + stderr;
 
       expect(exitCode).toBe(0);
-      expect(output).toContain('server.cjs [OPTIONS]');
+      expect(output).toContain('remote-ssh-mcp [OPTIONS]');
       expect(output).toContain('SSH Connection Options:');
       expect(output).toContain('--host');
       expect(output).toContain('--username');
@@ -151,7 +127,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
       const output = stdout + stderr;
 
       expect(exitCode).toBe(0);
-      expect(output).toContain('server.cjs [OPTIONS]');
+      expect(output).toContain('remote-ssh-mcp [OPTIONS]');
     });
 
     it('should show version with --version', async () => {

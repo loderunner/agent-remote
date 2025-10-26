@@ -20,9 +20,9 @@ export default [
       parserOptions: {
         projectService: {
           allowDefaultProject: [
-            '*.config.{js,mjs,cjs,ts}',
-            'packages/*/*.config.{js,mjs,cjs,ts}',
-            'packages/*/*.setup.{js,mjs,cjs,ts}',
+            '*.config.{js,mjs,cjs}',
+            'packages/*/*.config.{js,mjs,cjs}',
+            'packages/*/*.setup.{js,mjs,cjs}',
           ],
         },
       },

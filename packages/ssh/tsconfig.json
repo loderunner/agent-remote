@@ -5,6 +5,6 @@
       "~/*": ["./src/*"]
     }
   },
-  "include": ["src", "package.json"],
+  "include": ["src", "./package.json", "./*.config.ts", "./*.setup.ts"],
   "exclude": ["node_modules", "dist"]
 }
