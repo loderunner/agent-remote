@@ -61,7 +61,7 @@ function findDefaultPrivateKey():
  */
 function parseSSHConfig(): ConnectConfig {
   const argv = yargs(hideBin(process.argv))
-    .usage('$0 [OPTIONS]')
+    .usage('remote-ssh-mcp [OPTIONS]')
     .version(packageJson.version)
     .help('help')
     .alias('help', 'h')

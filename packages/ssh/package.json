@@ -23,8 +23,8 @@
     "!src/**/*.test.ts"
   ],
   "scripts": {
-    "build": "rollup -c",
-    "build:watch": "rollup -c --watch",
+    "build": "tsdown",
+    "build:watch": "tsdown --watch",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run --project=unit",
@@ -56,15 +56,13 @@
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.21",
     "@modelcontextprotocol/sdk": "^1.20.0",
-    "@rollup/plugin-commonjs": "^28.0.8",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^16.0.3",
-    "@rollup/plugin-typescript": "^12.1.4",
     "@types/ssh2": "^1.15.5",
     "@types/yargs": "^17.0.33",
     "rimraf": "^6.0.1",
-    "rollup": "^4.52.4",
-    "rollup-plugin-dts": "^6.2.3",
-    "tsx": "^4.20.6"
+    "tsdown": "^0.15.9",
+    "vitest": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "tslib": "catalog:"
   }
 }
