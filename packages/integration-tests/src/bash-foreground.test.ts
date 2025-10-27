@@ -1,36 +1,34 @@
-import { Client } from 'ssh2';
+import { BashTool } from '@claude-remote/ssh';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { BashTool } from './bash';
+import { getSSHClient, setupSSH, teardownSSH } from './setup';
 
 describe('Integration Tests', () => {
-  describe('BashTool', () => {
-    describe('Foreground Execution', () => {
-      let client: Client;
+  beforeAll(async () => {
+    await setupSSH();
+  });
+
+  afterAll(() => {
+    teardownSSH();
+  });
+
+  const implementations: Array<{
+    name: string;
+    createBashTool: () => BashTool;
+  }> = [
+    {
+      name: 'ssh',
+      createBashTool: () => new BashTool(getSSHClient()),
+    },
+  ];
+
+  describe.each(implementations)(
+    'BashTool Foreground ($name)',
+    ({ name: _name, createBashTool }) => {
       let bashTool: BashTool;
 
-      beforeAll(async () => {
-        client = new Client();
-        await new Promise<void>((resolve, reject) => {
-          client.on('ready', () => {
-            resolve();
-          });
-          client.on('error', (err) => {
-            reject(err);
-          });
-          client.connect({
-            host: 'localhost',
-            port: 2222,
-            username: 'dev',
-            password: 'dev',
-          });
-        });
-
-        bashTool = new BashTool(client);
-      });
-
-      afterAll(() => {
-        client.end();
+      beforeAll(() => {
+        bashTool = createBashTool();
       });
 
       it('should execute a simple command and return output', async () => {
@@ -211,11 +209,15 @@ describe('Integration Tests', () => {
         const command = 'echo "test output"';
         const result = await bashTool.execute({ command });
 
-        const lines = result.output.split('\n').filter((line) => line.trim());
+        const lines = result.output
+          .split('\n')
+          .filter((line: string) => line.trim());
         expect(lines).not.toContain(
           expect.stringMatching(new RegExp(`^${command}`)),
         );
-        expect(lines.some((line) => line.includes('test output'))).toBe(true);
+        expect(lines.some((line: string) => line.includes('test output'))).toBe(
+          true,
+        );
       });
 
       it('should not leak event listeners after multiple executions', async () => {
@@ -281,6 +283,6 @@ describe('Integration Tests', () => {
         );
         expect(result.exitCode).not.toBe(0);
       });
-    });
-  });
+    },
+  );
 });

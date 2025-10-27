@@ -1,36 +1,34 @@
-import { Client } from 'ssh2';
+import { BashTool } from '@claude-remote/ssh';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { BashTool } from './bash';
+import { getSSHClient, setupSSH, teardownSSH } from './setup';
 
 describe('Integration Tests', () => {
-  describe('BashTool', () => {
-    describe('Background Execution', () => {
-      let client: Client;
+  beforeAll(async () => {
+    await setupSSH();
+  });
+
+  afterAll(() => {
+    teardownSSH();
+  });
+
+  const implementations: Array<{
+    name: string;
+    createBashTool: () => BashTool;
+  }> = [
+    {
+      name: 'ssh',
+      createBashTool: () => new BashTool(getSSHClient()),
+    },
+  ];
+
+  describe.each(implementations)(
+    'BashTool Background ($name)',
+    ({ name: _name, createBashTool }) => {
       let bashTool: BashTool;
 
-      beforeAll(async () => {
-        client = new Client();
-        await new Promise<void>((resolve, reject) => {
-          client.on('ready', () => {
-            resolve();
-          });
-          client.on('error', (err) => {
-            reject(err);
-          });
-          client.connect({
-            host: 'localhost',
-            port: 2222,
-            username: 'dev',
-            password: 'dev',
-          });
-        });
-
-        bashTool = new BashTool(client);
-      });
-
-      afterAll(() => {
-        client.end();
+      beforeAll(() => {
+        bashTool = createBashTool();
       });
 
       it('should execute a simple command in background and return shellId', async () => {
@@ -486,6 +484,6 @@ describe('Integration Tests', () => {
         expect(output.output).toContain('stdout2');
         expect(output.output).toContain('stderr2');
       });
-    });
-  });
+    },
+  );
 });

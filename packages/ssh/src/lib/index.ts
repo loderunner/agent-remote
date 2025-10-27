@@ -1,4 +1,9 @@
 export { Remote } from './remote';
+export { BashTool } from './bash';
+export { FileTool } from './file';
+export { GlobTool } from './glob';
+export { GrepTool } from './grep';
+
 export type {
   BashOutputToolDefinition,
   BashToolDefinition,

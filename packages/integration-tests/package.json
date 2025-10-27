@@ -1,0 +1,26 @@
+{
+  "name": "@claude-remote/integration-tests",
+  "version": "1.0.0",
+  "description": "Integration tests for Claude remote tool implementations",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ssh": "vitest run --testNamePattern ssh",
+    "test:watch:ssh": "vitest --testNamePattern ssh"
+  },
+  "dependencies": {
+    "@claude-remote/core": "workspace:*",
+    "@claude-remote/ssh": "workspace:*",
+    "ssh2": "^1.17.0"
+  },
+  "devDependencies": {
+    "@types/ssh2": "^1.15.5",
+    "jest-extended": "^4.0.2",
+    "rimraf": "^6.0.1",
+    "tslib": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}
