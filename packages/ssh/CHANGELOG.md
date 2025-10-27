@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.0.3](https://github.com/loderunner/claude-remote/compare/ssh-v0.0.2...ssh-v0.0.3) (2025-10-27)
+
+
+### Features
+
+* rename the project from claude-remote to agent-remote ([#14](https://github.com/loderunner/claude-remote/issues/14)) ([5e08dc0](https://github.com/loderunner/claude-remote/commit/5e08dc03be92be71721d697b6ecfb66fd5a8f12d))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @agent-remote/core bumped to 0.0.2
+
 ## [0.0.2](https://github.com/loderunner/agent-remote/compare/ssh-v0.0.1...ssh-v0.0.2) (2025-10-27)
 
 

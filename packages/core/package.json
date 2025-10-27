@@ -1,6 +1,6 @@
 {
   "name": "@agent-remote/core",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Core types and schemas for agent-remote tools",
   "license": "Apache-2.0",
   "type": "module",
