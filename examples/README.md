@@ -1,7 +1,7 @@
 # Examples
 
 This directory contains example projects demonstrating how to use
-`@claude-remote/ssh` with the Claude Agent SDK.
+`@agent-remote/ssh` with the Claude Agent SDK.
 
 ## Available Examples
 
@@ -19,7 +19,7 @@ Perfect for getting started and understanding the fundamentals.
 ## Development Setup (Contributors)
 
 This guide is for developers working on the monorepo who want to test changes to
-`@claude-remote/ssh` in the examples.
+`@agent-remote/ssh` in the examples.
 
 ### Prerequisites
 
@@ -43,7 +43,7 @@ This guide is for developers working on the monorepo who want to test changes to
 
 ### Linking the Local Package
 
-To use your local development version of `@claude-remote/ssh`:
+To use your local development version of `@agent-remote/ssh`:
 
 ```bash
 cd examples/claude-agent-sdk
@@ -53,7 +53,7 @@ pnpm install
 
 The `pnpm link` command:
 
-- Creates a symlink from `node_modules/@claude-remote/ssh` to
+- Creates a symlink from `node_modules/@agent-remote/ssh` to
   `../../packages/ssh`
 - Adds an override to `examples/pnpm-workspace.yaml` that persists across
   installs

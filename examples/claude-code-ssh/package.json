@@ -1,5 +1,5 @@
 {
-  "name": "@claude-remote/claude-code-ssh-example",
+  "name": "@agent-remote/claude-code-ssh-example",
   "version": "0.0.1",
   "description": "Example project for using Claude Code with SSH MCP server",
   "license": "Apache-2.0",
@@ -9,6 +9,6 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-code": "^1.0.0",
-    "@claude-remote/ssh": "link:../../packages/ssh"
+    "@agent-remote/ssh": "link:../../packages/ssh"
   }
 }

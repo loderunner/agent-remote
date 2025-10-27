@@ -5,12 +5,12 @@ import type {
   FileReadOutput,
   FileWriteInput,
   FileWriteOutput,
-} from '@claude-remote/core';
+} from '@agent-remote/core';
 import {
   fileEditInputSchema,
   fileReadInputSchema,
   fileWriteInputSchema,
-} from '@claude-remote/core';
+} from '@agent-remote/core';
 import { structuredPatch } from 'diff';
 import { Client, SFTPWrapper } from 'ssh2';
 

@@ -1,5 +1,5 @@
 {
-  "name": "claude-remote",
+  "name": "agent-remote",
   "version": "0.0.1",
   "description": "Remote execution tools for Claude AI agents",
   "license": "Apache-2.0",

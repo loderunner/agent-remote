@@ -1,5 +1,5 @@
-import type { GlobInput, GlobOutput } from '@claude-remote/core';
-import { globInputSchema } from '@claude-remote/core';
+import type { GlobInput, GlobOutput } from '@agent-remote/core';
+import { globInputSchema } from '@agent-remote/core';
 import { minimatch } from 'minimatch';
 import { Client } from 'ssh2';
 

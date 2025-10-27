@@ -3,4 +3,4 @@ packages:
   - claude-code-ssh
 
 overrides:
-  '@claude-remote/ssh': link:../packages/ssh
+  '@agent-remote/ssh': link:../packages/ssh

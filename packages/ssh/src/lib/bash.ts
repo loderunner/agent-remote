@@ -5,12 +5,12 @@ import type {
   BashOutputOutput,
   KillShellInput,
   KillShellOutput,
-} from '@claude-remote/core';
+} from '@agent-remote/core';
 import {
   bashInputSchema,
   bashOutputInputSchema,
   killShellInputSchema,
-} from '@claude-remote/core';
+} from '@agent-remote/core';
 import { customAlphabet } from 'nanoid';
 import { Client, ClientChannel } from 'ssh2';
 

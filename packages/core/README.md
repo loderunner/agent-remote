@@ -1,4 +1,4 @@
-# @claude-remote/core
+# @agent-remote/core
 
 Core types and schemas for Claude remote tools.
 
@@ -21,8 +21,8 @@ checking.
 ## Usage
 
 ```typescript
-import type { BashInput, FileReadInput, GrepOutput } from '@claude-remote/core';
-import { bashInputSchema, fileReadInputSchema } from '@claude-remote/core';
+import type { BashInput, FileReadInput, GrepOutput } from '@agent-remote/core';
+import { bashInputSchema, fileReadInputSchema } from '@agent-remote/core';
 
 // Use types for type checking
 const input: BashInput = {
@@ -40,14 +40,14 @@ This package is designed to be used in two scenarios:
 
 ### Internal Usage (Monorepo Packages)
 
-For packages within this monorepo (like `@claude-remote/ssh`):
+For packages within this monorepo (like `@agent-remote/ssh`):
 
 **1. Add as dev dependency:**
 
 ```json
 {
   "devDependencies": {
-    "@claude-remote/core": "workspace:*"
+    "@agent-remote/core": "workspace:*"
   }
 }
 ```
@@ -72,12 +72,12 @@ For tsdown/rolldown:
 export const config: Options = {
   entry: 'src/index.ts',
   format: 'esm',
-  noExternal: ['@claude-remote/core'], // Bundle core completely
+  noExternal: ['@agent-remote/core'], // Bundle core completely
   // ...
 };
 ```
 
-For other bundlers, ensure `@claude-remote/core` is not treated as external.
+For other bundlers, ensure `@agent-remote/core` is not treated as external.
 
 **Why bundle?** This keeps your package standalone with zero runtime
 dependencies on internal packages, avoiding build orchestration complexity.
@@ -95,14 +95,14 @@ For external packages building their own remote integrations:
 **1. Install from npm:**
 
 ```bash
-npm install @claude-remote/core
+npm install @agent-remote/core
 ```
 
 **2. Import types and schemas:**
 
 ```typescript
-import type { BashInput, BashToolDefinition } from '@claude-remote/core';
-import { bashInputSchema } from '@claude-remote/core';
+import type { BashInput, BashToolDefinition } from '@agent-remote/core';
+import { bashInputSchema } from '@agent-remote/core';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 // Create a tool definition using core types

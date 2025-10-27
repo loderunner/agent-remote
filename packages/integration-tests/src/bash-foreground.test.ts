@@ -1,4 +1,4 @@
-import { BashTool } from '@claude-remote/ssh';
+import { BashTool } from '@agent-remote/ssh';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { getSSHClient, setupSSH, teardownSSH } from './setup';

@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 
-import { FileTool } from '@claude-remote/ssh';
+import { FileTool } from '@agent-remote/ssh';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { getSSHClient, getSSHSFTP, setupSSH, teardownSSH } from './setup';

@@ -1,5 +1,5 @@
 {
-  "name": "@claude-remote/integration-tests",
+  "name": "@agent-remote/integration-tests",
   "version": "1.0.0",
   "description": "Integration tests for Claude remote tool implementations",
   "private": true,
@@ -11,8 +11,8 @@
     "test:watch:ssh": "vitest --testNamePattern ssh"
   },
   "dependencies": {
-    "@claude-remote/core": "workspace:*",
-    "@claude-remote/ssh": "workspace:*",
+    "@agent-remote/core": "workspace:*",
+    "@agent-remote/ssh": "workspace:*",
     "ssh2": "^1.17.0"
   },
   "devDependencies": {
