@@ -1,5 +1,9 @@
 # @agent-remote/ssh
 
+[![npm version](https://img.shields.io/npm/v/@agent-remote/ssh.svg)](https://www.npmjs.com/package/@agent-remote/ssh)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../../LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+
 A TypeScript library for executing commands and managing files on remote systems
 via SSH. Designed for integration with the Claude Agent SDK to provide AI agents
 with remote system access.

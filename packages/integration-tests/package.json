@@ -2,6 +2,18 @@
   "name": "@agent-remote/integration-tests",
   "version": "1.0.0",
   "description": "Integration tests for agent-remote tool implementations",
+  "license": "Apache-2.0",
+  "author": "Charles Francoise",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loderunner/agent-remote.git",
+    "directory": "packages/integration-tests"
+  },
+  "keywords": [
+    "tests",
+    "integration",
+    "agent-remote"
+  ],
   "private": true,
   "type": "module",
   "scripts": {

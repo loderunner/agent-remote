@@ -1,5 +1,9 @@
 # @agent-remote/core
 
+[![npm version](https://img.shields.io/npm/v/@agent-remote/core.svg)](https://www.npmjs.com/package/@agent-remote/core)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../../LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+
 Core types and schemas for agent-remote tools.
 
 ## Overview

@@ -1,5 +1,7 @@
 # Claude Code with Remote SSH Tools
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../../LICENSE)
+
 A configuration example for using Claude Code with remote systems via SSH. All
 file operations and command executions happen on the remote machine instead of
 your local filesystem.
