@@ -5,7 +5,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   resolve: {
     alias: {
-      '@claude-remote/ssh': path.resolve(__dirname, '../ssh/src/lib/index.ts'),
+      '@agent-remote/ssh': path.resolve(__dirname, '../ssh/src/lib/index.ts'),
     },
   },
   test: {

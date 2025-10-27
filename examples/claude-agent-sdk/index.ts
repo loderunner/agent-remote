@@ -5,10 +5,10 @@ import type {
   TextBlock,
   ToolUseBlock,
 } from '@anthropic-ai/sdk/resources/messages.mjs';
-import { Remote } from '@claude-remote/ssh';
+import { Remote } from '@agent-remote/ssh';
 
 /**
- * Simple example demonstrating how to use @claude-remote/ssh tools
+ * Simple example demonstrating how to use @agent-remote/ssh tools
  * with the Claude Agent SDK.
  *
  * This example connects to a remote SSH server and creates an AI agent

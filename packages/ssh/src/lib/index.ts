@@ -13,7 +13,7 @@ export type {
   KillBashToolDefinition,
   ReadToolDefinition,
   WriteToolDefinition,
-} from '@claude-remote/core';
+} from '@agent-remote/core';
 export type {
   BashInput,
   BashOutput,
@@ -21,7 +21,7 @@ export type {
   BashOutputOutput,
   KillShellInput,
   KillShellOutput,
-} from '@claude-remote/core';
+} from '@agent-remote/core';
 export type {
   FileEditInput,
   FileEditOutput,
@@ -29,8 +29,8 @@ export type {
   FileReadOutput,
   FileWriteInput,
   FileWriteOutput,
-} from '@claude-remote/core';
-export type { GrepInput, GrepOutput } from '@claude-remote/core';
-export type { GlobInput, GlobOutput } from '@claude-remote/core';
+} from '@agent-remote/core';
+export type { GrepInput, GrepOutput } from '@agent-remote/core';
+export type { GlobInput, GlobOutput } from '@agent-remote/core';
 
 export type { ConnectConfig } from 'ssh2';

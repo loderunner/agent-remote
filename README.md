@@ -1,21 +1,21 @@
-# claude-remote
+# agent-remote
 
-Remote execution tools for Claude AI agents. Connect Claude to remote systems
-via SSH and give AI agents the ability to execute commands, manage files, and
-search filesystems on remote machines.
+Remote execution tools for AI agents. Connect AI agents to remote systems via
+SSH to execute commands, manage files, and search filesystems on remote
+machines.
 
 ## Packages
 
-- **[@claude-remote/core](packages/core)** - Core types and schemas for remote
+- **[@agent-remote/core](packages/core)** - Core types and schemas for remote
   tool definitions
-- **[@claude-remote/ssh](packages/ssh)** - TypeScript library providing
-  SSH-based remote execution tools with MCP server support
+- **[@agent-remote/ssh](packages/ssh)** - TypeScript library providing SSH-based
+  remote execution tools with MCP server support
 - **[integration-tests](packages/integration-tests)** - Generic integration
   tests for remote implementations
 
 ## Examples
 
-- **[claude-agent-sdk](examples/claude-agent-sdk)** - Using @claude-remote/ssh
+- **[claude-agent-sdk](examples/claude-agent-sdk)** - Using @agent-remote/ssh
   with Claude Agent SDK to create autonomous AI agents
 - **[claude-code-ssh](examples/claude-code-ssh)** - Configuration for using
   Claude Code with remote SSH tools

@@ -1,4 +1,3 @@
-import { createSdkMcpServer, tool } from '@anthropic-ai/claude-agent-sdk';
 import type {
   BashInput,
   BashOutputInput,
@@ -16,7 +15,7 @@ import type {
   KillShellInput,
   ReadToolDefinition,
   WriteToolDefinition,
-} from '@claude-remote/core';
+} from '@agent-remote/core';
 import {
   bashInputSchema,
   bashOutputInputSchema,
@@ -26,7 +25,8 @@ import {
   globInputSchema,
   grepInputSchema,
   killShellInputSchema,
-} from '@claude-remote/core';
+} from '@agent-remote/core';
+import { createSdkMcpServer, tool } from '@anthropic-ai/claude-agent-sdk';
 import { formatPatch } from 'diff';
 import { Client, ConnectConfig, SFTPWrapper } from 'ssh2';
 import { ZodError } from 'zod';

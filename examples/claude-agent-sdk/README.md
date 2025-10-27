@@ -1,6 +1,6 @@
-# Claude Agent SDK with @claude-remote/ssh
+# Claude Agent SDK with @agent-remote/ssh
 
-A complete example demonstrating how to use `@claude-remote/ssh` with the Claude
+A complete example demonstrating how to use `@agent-remote/ssh` with the Claude
 Agent SDK to create an AI agent that can interact with remote systems via SSH.
 
 ## What This Example Does

@@ -1,5 +1,5 @@
-import type { GrepInput, GrepOutput } from '@claude-remote/core';
-import { grepInputSchema } from '@claude-remote/core';
+import type { GrepInput, GrepOutput } from '@agent-remote/core';
+import { grepInputSchema } from '@agent-remote/core';
 import { Client } from 'ssh2';
 
 export class GrepTool {

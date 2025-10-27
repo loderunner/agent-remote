@@ -1,4 +1,4 @@
-# @claude-remote/ssh
+# @agent-remote/ssh
 
 A TypeScript library for executing commands and managing files on remote systems
 via SSH. Designed for integration with the Claude Agent SDK to provide AI agents
@@ -20,7 +20,7 @@ with remote system access.
 ## Installation
 
 ```bash
-pnpm add @claude-remote/ssh
+pnpm add @agent-remote/ssh
 ```
 
 ## Quick Start
@@ -35,7 +35,7 @@ distribute and run without installing node_modules.
 **Installation:**
 
 ```bash
-npm install -g @claude-remote/ssh
+npm install -g @agent-remote/ssh
 ```
 
 **Usage with command line arguments:**
@@ -106,7 +106,7 @@ remote-ssh-mcp --host example.com --username user --no-default-keys
 ### Basic Usage
 
 ```typescript
-import { Remote } from '@claude-remote/ssh';
+import { Remote } from '@agent-remote/ssh';
 
 // Connect to remote server
 const remote = await Remote.connect({
@@ -139,7 +139,7 @@ await remote.disconnect();
 ### Using with Claude Agent SDK
 
 ```typescript
-import { Remote } from '@claude-remote/ssh';
+import { Remote } from '@agent-remote/ssh';
 
 const remote = await Remote.connect({
   host: 'example.com',

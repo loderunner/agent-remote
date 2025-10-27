@@ -6,12 +6,12 @@
   "packages": {
     "packages/core": {
       "release-type": "node",
-      "package-name": "@claude-remote/core",
+      "package-name": "@agent-remote/core",
       "changelog-path": "CHANGELOG.md"
     },
     "packages/ssh": {
       "release-type": "node",
-      "package-name": "@claude-remote/ssh",
+      "package-name": "@agent-remote/ssh",
       "changelog-path": "CHANGELOG.md"
     }
   },
