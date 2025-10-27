@@ -86,24 +86,12 @@ The `.mcp.json` file configures an MCP server that connects via SSH:
 {
   "mcpServers": {
     "remote-ssh": {
-      "command": "remote-ssh-mcp-server",
+      "command": "remote-ssh-mcp",
       "args": ["--host", "localhost", "--port", "2222", ...]
     }
   }
 }
 ```
 
-The `.claude/settings.json` file allows only remote tools and denies local
-built-in tools:
-
-```json
-{
-  "permissions": {
-    "enabledMcpjsonServers": ["remote-ssh"],
-    "allow": ["mcp__remote-ssh"],
-    "deny": ["Bash", "Read", "Write", "Edit", "Grep", "Glob", ...]
-  }
-}
-```
-
-This ensures all operations are remote by default.
+This provides access to all remote tools (bash, read, write, edit, grep, glob)
+through the MCP protocol.

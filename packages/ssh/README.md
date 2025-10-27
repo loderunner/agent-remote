@@ -42,13 +42,13 @@ npm install -g @claude-remote/ssh
 
 ```bash
 # With password authentication
-ssh-mcp-server --host example.com --username user --password secret
+remote-ssh-mcp --host example.com --username user --password secret
 
 # With private key authentication
-ssh-mcp-server --host example.com --username user --private-key ~/.ssh/id_rsa
+remote-ssh-mcp --host example.com --username user --private-key ~/.ssh/id_rsa
 
 # With SSH agent
-ssh-mcp-server --host example.com --username user --agent $SSH_AUTH_SOCK
+remote-ssh-mcp --host example.com --username user --agent $SSH_AUTH_SOCK
 ```
 
 **Usage with environment variables:**
@@ -57,7 +57,7 @@ ssh-mcp-server --host example.com --username user --agent $SSH_AUTH_SOCK
 export SSH_HOST=example.com
 export SSH_USERNAME=user
 export SSH_PRIVATE_KEY=~/.ssh/id_rsa
-ssh-mcp-server
+remote-ssh-mcp
 ```
 
 **Available options:**
@@ -94,13 +94,13 @@ options:
 
 ```bash
 # Just like: ssh user@example.com
-ssh-mcp-server --host example.com --username user
+remote-ssh-mcp --host example.com --username user
 ```
 
 To disable the automatic default key fallback:
 
 ```bash
-ssh-mcp-server --host example.com --username user --no-default-keys
+remote-ssh-mcp --host example.com --username user --no-default-keys
 ```
 
 ### Basic Usage
@@ -530,7 +530,7 @@ explicit credentials, the server automatically tries default SSH keys from
 
 ```bash
 # MCP server will try SSH agent, then fall back to ~/.ssh/id_ed25519, etc.
-ssh-mcp-server --host example.com --username user
+remote-ssh-mcp --host example.com --username user
 ```
 
 This automatic fallback can be disabled with `--no-default-keys`.
@@ -639,4 +639,4 @@ await remote.edit.handler({
 
 ## License
 
-UNLICENSED
+Apache-2.0

@@ -1,5 +1,6 @@
 packages:
   - claude-agent-sdk
+  - claude-code-ssh
 
 overrides:
   '@claude-remote/ssh': link:../packages/ssh

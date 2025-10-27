@@ -6,8 +6,12 @@ search filesystems on remote machines.
 
 ## Packages
 
+- **[@claude-remote/core](packages/core)** - Core types and schemas for remote
+  tool definitions
 - **[@claude-remote/ssh](packages/ssh)** - TypeScript library providing
   SSH-based remote execution tools with MCP server support
+- **[integration-tests](packages/integration-tests)** - Generic integration
+  tests for remote implementations
 
 ## Examples
 
