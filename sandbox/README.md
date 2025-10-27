@@ -1,4 +1,4 @@
-# Claude Remote Dev Sandbox
+# agent-remote Dev Sandbox
 
 A containerized Ubuntu development environment accessible via SSH.
 

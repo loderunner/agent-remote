@@ -1,8 +1,8 @@
 # agent-remote
 
-Remote execution tools for Claude AI agents. Connect Claude to remote systems
-via SSH and give AI agents the ability to execute commands, manage files, and
-search filesystems on remote machines.
+Remote execution tools for AI agents. Connect AI agents to remote systems via
+SSH to execute commands, manage files, and search filesystems on remote
+machines.
 
 ## Packages
 

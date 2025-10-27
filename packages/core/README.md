@@ -1,6 +1,6 @@
 # @agent-remote/core
 
-Core types and schemas for Claude remote tools.
+Core types and schemas for agent-remote tools.
 
 ## Overview
 

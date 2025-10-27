@@ -1,7 +1,7 @@
 {
   "name": "@agent-remote/integration-tests",
   "version": "1.0.0",
-  "description": "Integration tests for Claude remote tool implementations",
+  "description": "Integration tests for agent-remote tool implementations",
   "private": true,
   "type": "module",
   "scripts": {
