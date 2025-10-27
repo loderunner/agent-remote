@@ -3,22 +3,6 @@
   "version": "0.0.1",
   "description": "Example project for using Claude Code with SSH MCP server",
   "license": "Apache-2.0",
-  "author": "Charles Francoise",
-  "homepage": "https://github.com/loderunner/agent-remote#readme",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/loderunner/agent-remote.git",
-    "directory": "examples/claude-code-ssh"
-  },
-  "keywords": [
-    "example",
-    "claude",
-    "claude-code",
-    "anthropic",
-    "ssh",
-    "mcp",
-    "remote"
-  ],
   "private": true,
   "scripts": {
     "start": "claude"

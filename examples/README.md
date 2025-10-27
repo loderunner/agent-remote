@@ -1,7 +1,5 @@
 # Examples
 
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../LICENSE)
-
 This directory contains example projects demonstrating how to use
 `@agent-remote/ssh` with the Claude Agent SDK.
 
