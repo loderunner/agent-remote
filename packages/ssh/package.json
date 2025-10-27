@@ -1,6 +1,6 @@
 {
   "name": "@claude-remote/ssh",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "SSH remote tools for Claude AI agents",
   "license": "Apache-2.0",
   "type": "module",
