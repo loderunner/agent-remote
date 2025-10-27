@@ -40,55 +40,16 @@ ssh -p 2222 dev@localhost
 
 The `dev` user has passwordless sudo access.
 
-## Development
+## Test Fixtures
 
-### Installation
+The sandbox includes test fixtures mounted at `/home/dev/fixtures`:
 
-Install dependencies:
-
-```bash
-pnpm install
-```
-
-### Testing
-
-**Important:** The test suite requires the sandbox container to be running.
-Tests are integration tests that connect to the actual SSH sandbox rather than
-using mocks.
-
-Start the sandbox before running tests:
-
-```bash
-cd sandbox
-docker-compose up -d
-cd ..
-```
-
-Run the tests:
-
-```bash
-pnpm test
-```
-
-The tests will connect to `localhost:2222` with credentials `dev:dev` and
-execute real commands over SSH. Test fixtures are available at
-`/home/dev/fixtures` in the container.
-
-### Building
-
-Build the project:
-
-```bash
-pnpm build
-```
-
-### Linting
-
-Check code formatting and linting:
-
-```bash
-pnpm lint
-```
+- `code/` - Sample code files (app.js, config.py, utils.ts)
+- `docs/` - Documentation files (API.md, README.md)
+- `empty/` - Empty directory
+- `hidden/` - Hidden files and directories
+- `nested/deep/` - Nested directory structure
+- Various text files for testing (simple.txt, log.txt, mixed-case.txt)
 
 ## Managing the Container
 

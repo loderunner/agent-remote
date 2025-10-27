@@ -1,67 +1,39 @@
 import fs from 'fs/promises';
 
-import { Client, SFTPWrapper } from 'ssh2';
+import { FileTool } from '@claude-remote/ssh';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { FileTool } from './file';
+import { getSSHClient, getSSHSFTP, setupSSH, teardownSSH } from './setup';
 
 describe('Integration Tests', () => {
-  let client: Client;
-  let sftp: SFTPWrapper;
   let fileContent: string;
   let fileLines: string[];
 
   beforeAll(async () => {
-    client = new Client();
-    await new Promise<void>((resolve, reject) => {
-      client.on('ready', () => {
-        resolve();
-      });
-      client.on('error', (err) => {
-        reject(err);
-      });
-      client.connect({
-        host: 'localhost',
-        port: 2222,
-        username: 'dev',
-        password: 'dev',
-      });
-    });
-
-    sftp = await new Promise<SFTPWrapper>((resolve, reject) => {
-      client.sftp((err, sftp) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve(sftp);
-      });
-    });
+    await setupSSH();
 
     fileContent = await fs.readFile(
-      `${__dirname}/../../../../sandbox/fixtures/simple.txt`,
+      `${__dirname}/../../../sandbox/fixtures/simple.txt`,
       'utf8',
     );
     fileLines = fileContent.split('\n');
   });
 
   afterAll(() => {
-    sftp.end();
-    client.end();
+    teardownSSH();
   });
 
-  // Run all file tests twice - once with SFTP, once with shell
   const implementations: Array<{
     name: string;
     createFileTool: () => FileTool;
   }> = [
     {
-      name: 'sftp',
-      createFileTool: () => new FileTool(sftp),
+      name: 'ssh-sftp',
+      createFileTool: () => new FileTool(getSSHSFTP()),
     },
     {
-      name: 'shell',
-      createFileTool: () => new FileTool(client),
+      name: 'ssh-bash',
+      createFileTool: () => new FileTool(getSSHClient()),
     },
   ];
 
@@ -169,7 +141,7 @@ describe('Integration Tests', () => {
         beforeAll(async () => {
           // Create test directory
           await new Promise<void>((resolve, reject) => {
-            sftp.mkdir(testDir, { mode: 0o755 }, (err) => {
+            getSSHSFTP().mkdir(testDir, { mode: 0o755 }, (err) => {
               // Ignore error if directory already exists
               if (err && err.message?.includes('Failure')) {
                 resolve();
