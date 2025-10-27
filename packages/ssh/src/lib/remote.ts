@@ -1,5 +1,32 @@
 import { createSdkMcpServer, tool } from '@anthropic-ai/claude-agent-sdk';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type {
+  BashInput,
+  BashOutputInput,
+  BashOutputToolDefinition,
+  BashToolDefinition,
+  EditToolDefinition,
+  FileEditInput,
+  FileReadInput,
+  FileWriteInput,
+  GlobInput,
+  GlobToolDefinition,
+  GrepInput,
+  GrepToolDefinition,
+  KillBashToolDefinition,
+  KillShellInput,
+  ReadToolDefinition,
+  WriteToolDefinition,
+} from '@claude-remote/core';
+import {
+  bashInputSchema,
+  bashOutputInputSchema,
+  fileEditInputSchema,
+  fileReadInputSchema,
+  fileWriteInputSchema,
+  globInputSchema,
+  grepInputSchema,
+  killShellInputSchema,
+} from '@claude-remote/core';
 import { formatPatch } from 'diff';
 import { Client, ConnectConfig, SFTPWrapper } from 'ssh2';
 import { ZodError } from 'zod';
@@ -7,106 +34,10 @@ import { fromError } from 'zod-validation-error/v3';
 
 import packageJson from '../../package.json';
 
-import {
-  BashInput,
-  BashOutputInput,
-  BashTool,
-  KillShellInput,
-  bashInputSchema,
-  bashOutputInputSchema,
-  killShellInputSchema,
-} from './bash';
-import {
-  FileEditInput,
-  FileReadInput,
-  FileTool,
-  FileWriteInput,
-  fileEditInputSchema,
-  fileReadInputSchema,
-  fileWriteInputSchema,
-} from './file';
-import { GlobInput, GlobTool, globInputSchema } from './glob';
-import { GrepInput, GrepTool, grepInputSchema } from './grep';
-
-/**
- * Tool definition for bash command execution
- */
-export type BashToolDefinition = {
-  name: 'bash';
-  description: string;
-  inputSchema: typeof bashInputSchema;
-  handler: (input: BashInput) => Promise<CallToolResult>;
-};
-
-/**
- * Tool definition for bash output retrieval
- */
-export type BashOutputToolDefinition = {
-  name: 'bash-output';
-  description: string;
-  inputSchema: typeof bashOutputInputSchema;
-  handler: (input: BashOutputInput) => Promise<CallToolResult>;
-};
-
-/**
- * Tool definition for killing bash shells
- */
-export type KillBashToolDefinition = {
-  name: 'kill-bash';
-  description: string;
-  inputSchema: typeof killShellInputSchema;
-  handler: (input: KillShellInput) => Promise<CallToolResult>;
-};
-
-/**
- * Tool definition for grep search
- */
-export type GrepToolDefinition = {
-  name: 'grep';
-  description: string;
-  inputSchema: typeof grepInputSchema;
-  handler: (input: GrepInput) => Promise<CallToolResult>;
-};
-
-/**
- * Tool definition for file read
- */
-export type ReadToolDefinition = {
-  name: 'read';
-  description: string;
-  inputSchema: typeof fileReadInputSchema;
-  handler: (input: FileReadInput) => Promise<CallToolResult>;
-};
-
-/**
- * Tool definition for file write
- */
-export type WriteToolDefinition = {
-  name: 'write';
-  description: string;
-  inputSchema: typeof fileWriteInputSchema;
-  handler: (input: FileWriteInput) => Promise<CallToolResult>;
-};
-
-/**
- * Tool definition for file edit
- */
-export type EditToolDefinition = {
-  name: 'edit';
-  description: string;
-  inputSchema: typeof fileEditInputSchema;
-  handler: (input: FileEditInput) => Promise<CallToolResult>;
-};
-
-/**
- * Tool definition for glob file search
- */
-export type GlobToolDefinition = {
-  name: 'glob';
-  description: string;
-  inputSchema: typeof globInputSchema;
-  handler: (input: GlobInput) => Promise<CallToolResult>;
-};
+import { BashTool } from './bash';
+import { FileTool } from './file';
+import { GlobTool } from './glob';
+import { GrepTool } from './grep';
 
 function formatErrorMessage(error: unknown): string {
   if (error instanceof ZodError) {

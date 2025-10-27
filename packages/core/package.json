@@ -1,0 +1,29 @@
+{
+  "name": "@claude-remote/core",
+  "version": "1.0.0",
+  "description": "Core types and schemas for Claude remote tools",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "clean": "tsc --build --clean"
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
+  },
+  "peerDependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.0"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.0",
+    "typescript": "catalog:",
+    "tslib": "catalog:"
+  }
+}

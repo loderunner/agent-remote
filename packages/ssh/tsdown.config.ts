@@ -9,6 +9,7 @@ export const esmTarget: Options = {
   format: 'esm',
   outDir: 'dist/esm',
   unbundle: true,
+  noExternal: ['@claude-remote/core'],
   dts: false,
   shims: false,
   clean: true,
@@ -20,6 +21,7 @@ export const cjsTarget: Options = {
   format: 'cjs',
   outDir: 'dist/cjs',
   unbundle: true,
+  noExternal: ['@claude-remote/core'],
   dts: false,
   shims: false,
   clean: true,
@@ -31,6 +33,7 @@ export const serverTarget: Options = {
   format: 'esm',
   banner: `#!/usr/bin/env node`,
   outDir: 'dist',
+  noExternal: ['@claude-remote/core'],
   plugins: [
     {
       name: 'chmod',
@@ -53,6 +56,7 @@ export const typeDeclarationsTarget: Options = {
   outDir: 'dist',
   dts: {
     emitDtsOnly: true,
+    build: true,
   },
 };
 
