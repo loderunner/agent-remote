@@ -38,8 +38,8 @@ export async function setupSSH(): Promise<void> {
  * Tear down SSH connection
  */
 export function teardownSSH(): void {
-  sftp?.end();
-  client?.end();
+  sftp.end();
+  client.end();
 }
 
 /**
@@ -54,4 +54,11 @@ export function getSSHClient(): Client {
  */
 export function getSSHSFTP(): SFTPWrapper {
   return sftp;
+}
+
+/**
+ * Get the Docker container name for testing
+ */
+export function getDockerContainer(): string {
+  return 'sandbox';
 }

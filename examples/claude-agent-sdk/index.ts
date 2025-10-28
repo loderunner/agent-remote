@@ -1,21 +1,22 @@
 import { readFileSync } from 'fs';
 
 import { query } from '@anthropic-ai/claude-agent-sdk';
-import type {
-  TextBlock,
-  ToolUseBlock,
-} from '@anthropic-ai/sdk/resources/messages.mjs';
-import { Remote } from '@agent-remote/ssh';
+import type { TextBlock, ToolUseBlock } from '@anthropic-ai/sdk/resources';
+import { Remote as SSHRemote } from '@agent-remote/ssh';
+import { Remote as DockerRemote } from '@agent-remote/docker';
 
 /**
- * Simple example demonstrating how to use @agent-remote/ssh tools
- * with the Claude Agent SDK.
+ * Simple example demonstrating how to use @agent-remote tools with the Claude
+ * Agent SDK.
  *
- * This example connects to a remote SSH server and creates an AI agent
+ * This example connects to a remote system and creates an AI agent
  * that can execute commands, read/write files, and search the filesystem.
  */
 
-type RemoteConfig = {
+type RemoteType = 'ssh' | 'docker';
+
+type SshConfig = {
+  type: 'ssh';
   host: string;
   port?: number;
   username: string;
@@ -23,10 +24,35 @@ type RemoteConfig = {
   privateKeyPath?: string;
 };
 
-/**
- * Loads SSH configuration from environment variables
- */
+type DockerConfig = {
+  type: 'docker';
+  container: string;
+  shell?: string;
+};
+
+type RemoteConfig = SshConfig | DockerConfig;
+
 function getRemoteConfig(): RemoteConfig {
+  const args = process.argv.slice(2);
+  const remoteType = (args[0] ?? 'ssh') as RemoteType;
+
+  if (!['ssh', 'docker'].includes(remoteType)) {
+    console.error(`Invalid remote type: ${remoteType}`);
+    console.error('Usage: tsx index.ts [ssh|docker]');
+    process.exit(1);
+  }
+
+  if (remoteType === 'docker') {
+    const container = process.env.DOCKER_CONTAINER ?? 'sandbox';
+    const shell = process.env.DOCKER_SHELL;
+
+    return {
+      type: 'docker',
+      container,
+      shell,
+    };
+  }
+
   const host = process.env.SSH_HOST ?? 'localhost';
   const port = process.env.SSH_PORT ? parseInt(process.env.SSH_PORT) : 2222;
   const username = process.env.SSH_USERNAME ?? 'dev';
@@ -34,6 +60,7 @@ function getRemoteConfig(): RemoteConfig {
   const privateKeyPath = process.env.SSH_KEY_PATH;
 
   return {
+    type: 'ssh',
     host,
     port,
     username,
@@ -46,33 +73,43 @@ function getRemoteConfig(): RemoteConfig {
  * Main function that demonstrates using remote tools with Claude
  */
 async function main() {
-  // Load configuration
   const config = getRemoteConfig();
 
-  console.log(
-    `Connecting to ${config.username}@${config.host}:${config.port}...`,
-  );
+  let remote: SSHRemote | DockerRemote;
+  let mcpServerName: string;
+  let needsDisconnect = false;
 
-  // Connect to remote server
-  const remote = await Remote.connect({
-    host: config.host,
-    port: config.port,
-    username: config.username,
-    password: config.password,
-    privateKey: config.privateKeyPath
-      ? readFileSync(config.privateKeyPath)
-      : undefined,
-  });
-
-  console.log('Connected successfully!\n');
+  if (config.type === 'docker') {
+    console.log(`Using Docker container: ${config.container}...`);
+    remote = new DockerRemote({
+      container: config.container,
+      shell: config.shell,
+    });
+    mcpServerName = 'remote-docker';
+    console.log('Remote ready!\n');
+  } else {
+    console.log(
+      `Connecting to ${config.username}@${config.host}:${config.port}...`,
+    );
+    remote = await SSHRemote.connect({
+      host: config.host,
+      port: config.port,
+      username: config.username,
+      password: config.password,
+      privateKey: config.privateKeyPath
+        ? readFileSync(config.privateKeyPath)
+        : undefined,
+    });
+    mcpServerName = 'remote-ssh';
+    needsDisconnect = true;
+    console.log('Connected successfully!\n');
+  }
 
   try {
-    // Create MCP server with all remote tools
-    const mcpServer = remote.createSdkMcpServer();
+    const mcpServer = remote.createSdkMcpServer(mcpServerName);
 
-    // Example task: List files and count TypeScript files
     const task = `
-      Please work on the REMOTE server (use the mcp__remote-ssh__ tools).
+      Please work on the REMOTE server (use the mcp__${mcpServerName}__ tools).
       The remote working directory is /home/dev.
       
       Do the following:
@@ -85,25 +122,22 @@ async function main() {
     console.log('Task:', task);
     console.log('\n--- Agent Response ---\n');
 
-    // Create agent query with remote tools
     const agentQuery = query({
       prompt: task,
       options: {
         mcpServers: {
-          'remote-ssh': mcpServer,
+          [mcpServerName]: mcpServer,
         },
         permissionMode: 'bypassPermissions',
       },
     });
 
-    // Process agent messages
     for await (const message of agentQuery) {
       if (message.type === 'system' && message.subtype === 'init') {
         console.log(`Model: ${message.model}`);
         console.log(`Available tools: ${message.tools.join(', ')}`);
         console.log('');
       } else if (message.type === 'assistant') {
-        // Display assistant message content
         for (const content of message.message.content) {
           if (content.type === 'text') {
             const textBlock = content as TextBlock;
@@ -128,9 +162,10 @@ async function main() {
       }
     }
   } finally {
-    // Clean up connection
-    await remote.disconnect();
-    console.log('\nDisconnected from remote server.');
+    if (needsDisconnect) {
+      await (remote as SSHRemote).disconnect();
+      console.log('\nDisconnected from remote server.');
+    }
   }
 }
 

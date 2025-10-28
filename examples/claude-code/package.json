@@ -1,0 +1,15 @@
+{
+  "name": "@agent-remote/claude-code-example",
+  "version": "0.0.1",
+  "description": "Example project for using Claude Code with remote tools via @agent-remote MCP servers",
+  "license": "Apache-2.0",
+  "private": true,
+  "scripts": {
+    "start": "claude"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.0",
+    "@agent-remote/ssh": "^0.0.3",
+    "@agent-remote/docker": "^0.0.1"
+  }
+}

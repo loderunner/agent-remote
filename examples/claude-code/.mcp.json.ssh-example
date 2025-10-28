@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "remote-ssh": {
+      "command": "remote-ssh-mcp",
+      "args": [
+        "--host", "localhost",
+        "--port", "2222",
+        "--username", "dev",
+        "--password", "dev"
+      ]
+    }
+  }
+}
+

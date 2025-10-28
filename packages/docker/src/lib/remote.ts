@@ -28,7 +28,6 @@ import {
 } from '@agent-remote/core';
 import { createSdkMcpServer, tool } from '@anthropic-ai/claude-agent-sdk';
 import { formatPatch } from 'diff';
-import { Client, ConnectConfig, SFTPWrapper } from 'ssh2';
 import { ZodError } from 'zod';
 import { fromError } from 'zod-validation-error/v3';
 
@@ -49,15 +48,31 @@ function formatErrorMessage(error: unknown): string {
 }
 
 /**
- * Remote SSH connection manager that provides tools for executing commands and
- * managing files on remote systems.
+ * Configuration for Docker remote
+ */
+export type RemoteConfig = {
+  /**
+   * Name of the Docker container to execute commands on
+   */
+  container: string;
+  /**
+   * Shell to use for command execution (default: 'sh')
+   * Common options: 'sh', 'bash', 'zsh', 'dash'
+   */
+  shell?: string;
+};
+
+export type ToolConfig = Required<RemoteConfig>;
+
+/**
+ * Docker remote manager that provides tools for executing commands and
+ * managing files on Docker containers.
  *
  * @example
  * ```typescript
- * const remote = await Remote.connect({
- *   host: 'example.com',
- *   username: 'user',
- *   privateKey: fs.readFileSync('/path/to/key'),
+ * const remote = new Remote({
+ *   container: 'my-app',
+ *   shell: 'bash', // optional, defaults to 'sh'
  * });
  *
  * // Use individual tools
@@ -66,93 +81,19 @@ function formatErrorMessage(error: unknown): string {
  *
  * // Or create an "MCP server" for the Claude Agent SDK
  * const server = remote.createSdkMcpServer();
- *
- * // Clean up when done
- * await remote.disconnect();
  * ```
  */
 export class Remote {
-  private client: Client;
-  private sftp?: SFTPWrapper;
+  private readonly container: string;
+  private readonly shell: string;
   private bashTool?: BashTool;
   private grepTool?: GrepTool;
   private globTool?: GlobTool;
   private fileTool?: FileTool;
 
-  private constructor(client: Client, sftp?: SFTPWrapper) {
-    this.client = client;
-    this.sftp = sftp;
-  }
-
-  /**
-   * Establishes a connection to a remote SSH server.
-   *
-   * @param config - SSH connection configuration (host, username, auth, etc.)
-   * @returns A connected Remote instance
-   * @throws If the SSH connection fails
-   *
-   * @example
-   * ```typescript
-   * // Connect with password
-   * const remote = await Remote.connect({
-   *   host: 'example.com',
-   *   username: 'user',
-   *   password: 'secret',
-   * });
-   *
-   * // Connect with private key
-   * const remote = await Remote.connect({
-   *   host: 'example.com',
-   *   username: 'user',
-   *   privateKey: fs.readFileSync('/path/to/id_rsa'),
-   * });
-   * ```
-   */
-  static async connect(config: ConnectConfig): Promise<Remote> {
-    const client = new Client();
-    await new Promise<void>((resolve, reject) => {
-      client.on('ready', () => {
-        resolve();
-      });
-      client.on('error', (err) => {
-        reject(err);
-      });
-      client.connect(config);
-    });
-
-    // Try to start SFTP, but don't fail if it's not available
-    const sftp = await new Promise<SFTPWrapper | undefined>((resolve) => {
-      client.sftp((err, sftp) => {
-        if (err) {
-          // SFTP not available, file operations will be disabled
-          resolve(undefined);
-          return;
-        }
-        resolve(sftp);
-      });
-    });
-
-    return new Remote(client, sftp);
-  }
-
-  /**
-   * Closes the SSH connection and SFTP session.
-   *
-   * @example
-   * ```typescript
-   * const remote = await Remote.connect(config);
-   * try {
-   *   // Use remote tools...
-   * } finally {
-   *   await remote.disconnect();
-   * }
-   * ```
-   */
-  async disconnect(): Promise<void> {
-    if (this.sftp) {
-      this.sftp.end();
-    }
-    this.client.end();
+  constructor(config: RemoteConfig) {
+    this.container = config.container;
+    this.shell = config.shell ?? 'sh';
   }
 
   /**
@@ -161,7 +102,10 @@ export class Remote {
    * For terminal operations like git, npm, docker, etc.
    */
   get bash(): BashToolDefinition {
-    this.bashTool ??= new BashTool(this.client);
+    this.bashTool ??= new BashTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.bashTool;
 
     return {
@@ -201,7 +145,10 @@ export class Remote {
    * Retrieves output from a running or completed background bash shell.
    */
   get bashOutput(): BashOutputToolDefinition {
-    this.bashTool ??= new BashTool(this.client);
+    this.bashTool ??= new BashTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.bashTool;
 
     return {
@@ -241,7 +188,10 @@ export class Remote {
    * Kills a running background shell by its ID.
    */
   get killBash(): KillBashToolDefinition {
-    this.bashTool ??= new BashTool(this.client);
+    this.bashTool ??= new BashTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.bashTool;
 
     return {
@@ -281,7 +231,10 @@ export class Remote {
    * Searches for patterns in files or directories.
    */
   get grep(): GrepToolDefinition {
-    this.grepTool ??= new GrepTool(this.client);
+    this.grepTool ??= new GrepTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.grepTool;
 
     return {
@@ -333,7 +286,10 @@ export class Remote {
    * Reads files from the remote filesystem.
    */
   get read(): ReadToolDefinition {
-    this.fileTool ??= new FileTool(this.sftp ?? this.client);
+    this.fileTool ??= new FileTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.fileTool;
 
     return {
@@ -381,7 +337,10 @@ export class Remote {
    * Writes content to files on the remote filesystem.
    */
   get write(): WriteToolDefinition {
-    this.fileTool ??= new FileTool(this.sftp ?? this.client);
+    this.fileTool ??= new FileTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.fileTool;
 
     return {
@@ -421,7 +380,10 @@ export class Remote {
    * Edits files by replacing text on the remote filesystem.
    */
   get edit(): EditToolDefinition {
-    this.fileTool ??= new FileTool(this.sftp ?? this.client);
+    this.fileTool ??= new FileTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.fileTool;
 
     return {
@@ -468,7 +430,10 @@ export class Remote {
    * Searches for files matching glob patterns.
    */
   get glob(): GlobToolDefinition {
-    this.globTool ??= new GlobTool(this.client);
+    this.globTool ??= new GlobTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.globTool;
 
     return {
@@ -508,15 +473,13 @@ export class Remote {
    * Creates an MCP server with all remote tools from this Remote instance.
    * This is a convenience method that integrates with the Claude Agent SDK.
    *
-   * @param name - Optional name for the MCP server (defaults to 'remote-ssh')
+   * @param name - Optional name for the MCP server (defaults to 'remote-docker')
    * @returns An MCP server instance from the Agent SDK
    *
    * @example
    * ```typescript
-   * const remote = await Remote.connect({
-   *   host: 'example.com',
-   *   username: 'user',
-   *   privateKey: fs.readFileSync('/path/to/key'),
+   * const remote = new Remote({
+   *   container: 'my-app',
    * });
    *
    * const server = remote.createSdkMcpServer();
@@ -524,7 +487,7 @@ export class Remote {
    * // Use with Agent SDK...
    * ```
    */
-  createSdkMcpServer(name: string = 'remote-ssh') {
+  createSdkMcpServer(name: string = 'remote-docker') {
     return createSdkMcpServer({
       name,
       version: packageJson.version,

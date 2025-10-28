@@ -1,9 +1,16 @@
 import fs from 'fs/promises';
 
-import { FileTool } from '@agent-remote/ssh';
+import { FileTool as DockerFileTool } from '@agent-remote/docker';
+import { FileTool as SSHFileTool } from '@agent-remote/ssh';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { getSSHClient, getSSHSFTP, setupSSH, teardownSSH } from './setup';
+import {
+  getDockerContainer,
+  getSSHClient,
+  getSSHSFTP,
+  setupSSH,
+  teardownSSH,
+} from './setup';
 
 describe('Integration Tests', () => {
   let fileContent: string;
@@ -25,22 +32,27 @@ describe('Integration Tests', () => {
 
   const implementations: Array<{
     name: string;
-    createFileTool: () => FileTool;
+    createFileTool: () => SSHFileTool | DockerFileTool;
   }> = [
     {
       name: 'ssh-sftp',
-      createFileTool: () => new FileTool(getSSHSFTP()),
+      createFileTool: () => new SSHFileTool(getSSHSFTP()),
     },
     {
       name: 'ssh-bash',
-      createFileTool: () => new FileTool(getSSHClient()),
+      createFileTool: () => new SSHFileTool(getSSHClient()),
+    },
+    {
+      name: 'docker',
+      createFileTool: () =>
+        new DockerFileTool({ container: getDockerContainer(), shell: 'sh' }),
     },
   ];
 
   describe.each(implementations)(
     'FileTool ($name)',
     ({ name, createFileTool }) => {
-      let fileTool: FileTool;
+      let fileTool: SSHFileTool | DockerFileTool;
 
       beforeAll(() => {
         fileTool = createFileTool();
@@ -143,7 +155,7 @@ describe('Integration Tests', () => {
           await new Promise<void>((resolve, reject) => {
             getSSHSFTP().mkdir(testDir, { mode: 0o755 }, (err) => {
               // Ignore error if directory already exists
-              if (err && err.message?.includes('Failure')) {
+              if (err && err.message.includes('Failure')) {
                 resolve();
                 return;
               }

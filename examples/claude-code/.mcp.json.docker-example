@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "remote-docker": {
+      "command": "remote-docker-mcp",
+      "args": [
+        "--container", "sandbox",
+        "--shell", "bash"
+      ]
+    }
+  }
+}
+

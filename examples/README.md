@@ -1,62 +1,60 @@
 # Examples
 
 This directory contains example projects demonstrating how to use
-`@agent-remote/ssh` with the Claude Agent SDK.
+`@agent-remote` tools with various AI frameworks.
 
 ## Available Examples
 
 ### [claude-agent-sdk](./claude-agent-sdk)
 
-A basic example showing how to:
+A complete example showing how to:
 
-- Connect to a remote SSH server
+- Connect to a remote system
 - Create an AI agent with remote execution tools
 - Execute multi-step tasks autonomously
 - Use the Claude Agent SDK with MCP tools
 
-Perfect for getting started and understanding the fundamentals.
+### [claude-code-ssh](./claude-code-ssh)
+
+Configuration examples for using Claude Code with remote systems:
+
+- MCP server configuration for SSH remotes
+- MCP server configuration for Docker remotes
+- Example configurations for both simultaneously
+- Works with the included sandbox environment
+
+Perfect for using Claude Code to work on remote systems.
 
 ## Development Setup (Contributors)
 
 This guide is for developers working on the monorepo who want to test changes to
-`@agent-remote/ssh` in the examples.
+`@agent-remote/ssh` or `@agent-remote/docker` in the examples.
 
 ### Prerequisites
 
 1. **Start the sandbox** (from monorepo root):
 
+```bash
+cd sandbox
+docker compose up -d
+cd ..
+```
+
+This provides a Docker container accessible via SSH or Docker exec for testing.
+
+2. **Build the packages** (from monorepo root):
+
    ```bash
-   cd sandbox
-   docker-compose up -d
-   cd ..
-   ```
-
-   This provides a Docker container with SSH access for testing.
-
-2. **Build the SSH package** (from monorepo root):
-
-   ```bash
+   # Build SSH package
    cd packages/ssh
    pnpm build
    cd ../..
+
+   # Build Docker package
+   cd packages/docker
+   pnpm build
+   cd ../..
    ```
-
-### Linking the Local Package
-
-To use your local development version of `@agent-remote/ssh`:
-
-```bash
-cd examples/claude-agent-sdk
-pnpm link ../../packages/ssh
-pnpm install
-```
-
-The `pnpm link` command:
-
-- Creates a symlink from `node_modules/@agent-remote/ssh` to
-  `../../packages/ssh`
-- Adds an override to `examples/pnpm-workspace.yaml` that persists across
-  installs
 
 ### Development Workflow
 
@@ -74,7 +72,7 @@ In another terminal, run the example:
 ```bash
 cd examples/claude-agent-sdk
 export ANTHROPIC_API_KEY=your_api_key_here
-pnpm start
+pnpm start:ssh  # or pnpm start:docker
 ```
 
 Now edit files in `packages/ssh/src/` - they'll automatically rebuild, and the
@@ -89,21 +87,8 @@ pnpm build
 
 # Run the example
 cd ../examples/claude-agent-sdk
-pnpm start
+pnpm start:ssh  # or pnpm start:docker
 ```
-
-### Unlinking (Reverting to npm Version)
-
-To stop using the local package and use the published npm version:
-
-1. Remove the `overrides:` section from `examples/pnpm-workspace.yaml`
-2. Reinstall:
-
-   ```bash
-   cd examples/claude-agent-sdk
-   rm pnpm-lock.yaml
-   pnpm install
-   ```
 
 ## Adding New Examples
 

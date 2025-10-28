@@ -1,4 +1,10 @@
 import type {
+  ChildProcess,
+  ChildProcessWithoutNullStreams,
+} from 'node:child_process';
+import { spawn } from 'node:child_process';
+
+import type {
   BashInput,
   BashOutput,
   BashOutputInput,
@@ -12,7 +18,8 @@ import {
   killShellInputSchema,
 } from '@agent-remote/core';
 import { customAlphabet } from 'nanoid';
-import { Client, ClientChannel } from 'ssh2';
+
+import { ToolConfig } from './remote';
 
 const nanoid = customAlphabet(
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
@@ -20,14 +27,19 @@ const nanoid = customAlphabet(
 );
 
 type Shell = BashOutputOutput & {
-  channel: ClientChannel;
+  process: ChildProcess;
 };
 
 export class BashTool {
-  private shell: ClientChannel | null = null;
+  private readonly container: string;
+  private readonly shellCommand: string;
+  private shellProcess: ChildProcessWithoutNullStreams | null = null;
   private readonly shells = new Map<string, Shell>();
 
-  constructor(private readonly client: Client) {}
+  constructor(config: ToolConfig) {
+    this.container = config.container;
+    this.shellCommand = config.shell;
+  }
 
   public async execute(input: BashInput): Promise<BashOutput> {
     bashInputSchema.parse(input);
@@ -39,29 +51,25 @@ export class BashTool {
     return this.executeInForeground(input);
   }
 
-  public async init(): Promise<ClientChannel> {
-    if (!this.shell) {
-      this.shell = await new Promise<ClientChannel>((resolve, reject) => {
-        this.client.shell(
-          {
-            modes: { ECHO: 0, ONLRET: 0, ONLCR: 0 },
-            term: 'dumb',
-          },
-          (err, channel) => {
-            if (err) {
-              reject(err);
-              return;
-            }
-            resolve(channel);
-          },
-        );
+  public async init(): Promise<ChildProcessWithoutNullStreams> {
+    if (!this.shellProcess || this.shellProcess.exitCode !== null) {
+      this.shellProcess = spawn('docker', [
+        'exec',
+        '-i',
+        this.container,
+        this.shellCommand,
+      ]);
+
+      this.shellProcess.on('close', () => {
+        this.shellProcess = null;
       });
-      this.shell.on('close', () => {
-        this.shell = null;
+
+      this.shellProcess.on('error', () => {
+        this.shellProcess = null;
       });
     }
 
-    return this.shell;
+    return this.shellProcess;
   }
 
   private async executeInForeground(input: BashInput): Promise<BashOutput> {
@@ -77,7 +85,7 @@ export class BashTool {
       let buffer = '';
       let timedOut = false;
 
-      const onData = (data: Buffer) => {
+      const onStdout = (data: Buffer) => {
         // Don't accumulate output after timeout, just consume it
         if (timedOut) {
           return;
@@ -122,8 +130,9 @@ export class BashTool {
             ? Number.parseInt(exitCodePart.slice(colonIndex + 1))
             : undefined;
 
-        this.shell?.removeListener('data', onData);
-        this.shell?.removeListener('error', onError);
+        shell.stdout.removeListener('data', onStdout);
+        shell.stderr.removeListener('data', onStderr);
+        shell.removeListener('error', onError);
 
         const trimmed = output.trim();
         resolve({
@@ -131,39 +140,47 @@ export class BashTool {
           exitCode: Number.isNaN(exitCode) ? undefined : exitCode,
         });
       };
+
+      const onStderr = (data: Buffer) => {
+        // Stderr data - include it in the output
+        if (!timedOut) {
+          buffer += data.toString();
+        }
+      };
+
       const onError = (err: unknown) => {
-        this.shell?.removeListener('data', onData);
-        this.shell?.removeListener('error', onError);
+        shell.stdout.removeListener('data', onStdout);
+        shell.stderr.removeListener('data', onStderr);
         reject(err);
       };
-      shell.on('data', onData);
+
+      shell.stdout.on('data', onStdout);
+      shell.stderr.on('data', onStderr);
       shell.on('error', onError);
 
       abortSignal.addEventListener('abort', () => {
-        // Mark as timed out but keep listeners to consume the end marker
+        // Mark as timed out
         timedOut = true;
-        // Send Ctrl+C to interrupt, then send two newlines to clear any partial input
-        // and ensure we're at a clean prompt
-        this.shell?.write('\x03\n\n');
 
-        // Set a cleanup timeout - if end marker doesn't arrive within a reasonable time,
-        // forcefully remove the listeners to prevent them from interfering with future commands
-        setTimeout(() => {
-          this.shell?.removeListener('data', onData);
-          this.shell?.removeListener('error', onError);
-        }, 500);
+        // Clean up listeners immediately
+        shell.stdout.removeListener('data', onStdout);
+        shell.stderr.removeListener('data', onStderr);
+        shell.removeListener('error', onError);
+
+        // Kill the persistent shell - it's in an unknown state after timeout
+        shell.kill();
+        this.shellProcess = null;
 
         // Extract output before the interrupt
         const output = buffer.slice(0, buffer.lastIndexOf('\n') + 1);
 
-        // Resolve immediately but listeners stay active to clean up
         resolve({
           output,
           killed: true,
         });
       });
 
-      shell.write(command + '\n');
+      shell.stdin.write(command + '\n');
     });
   }
 
@@ -171,72 +188,63 @@ export class BashTool {
     const abortSignal = AbortSignal.timeout(input.timeout ?? 60000);
     const shellId = nanoid();
 
-    const channel = await new Promise<ClientChannel>((resolve, reject) => {
-      this.client.exec(
-        input.command,
-        // {
-        //   pty: {
-        //     modes: { ECHO: 0, ONLRET: 0, ONLCR: 0, OPOST: 0 },
-        //     term: 'dumb',
-        //   },
-        // },
-        (err, channel) => {
-          if (err) {
-            reject(err);
-            return;
-          }
-          resolve(channel);
-        },
-      );
-    });
+    const process = spawn('docker', [
+      'exec',
+      this.container,
+      this.shellCommand,
+      '-c',
+      input.command,
+    ]);
 
     this.shells.set(shellId, {
       output: '',
       status: 'running',
-      channel,
+      process,
     });
-    channel.on('data', (data: Buffer) => {
+
+    process.stdout.on('data', (data: Buffer) => {
       const shell = this.shells.get(shellId);
       if (!shell) {
-        throw new Error('Shell not found');
+        return;
       }
       const text = data.toString();
       shell.output += text;
     });
-    channel.stderr.on('data', (data: Buffer) => {
+
+    process.stderr.on('data', (data: Buffer) => {
       const shell = this.shells.get(shellId);
       if (!shell) {
-        throw new Error('Shell not found');
+        return;
       }
       const text = data.toString();
       shell.output += text;
     });
-    channel.on('exit', (code: number | null, signal: string | null) => {
+
+    process.on('exit', (code: number | null, signal: NodeJS.Signals | null) => {
       const shell = this.shells.get(shellId);
       if (!shell) {
-        throw new Error('Shell not found');
+        return;
       }
       shell.exitCode = code ?? undefined;
       shell.signal = signal ?? undefined;
     });
-    channel.on('close', () => {
+
+    process.on('close', () => {
       const shell = this.shells.get(shellId);
       if (!shell) {
-        throw new Error('Shell not found');
+        return;
       }
       shell.status = 'completed';
-      shell.channel.removeAllListeners();
+      shell.process.removeAllListeners();
     });
 
     abortSignal.addEventListener('abort', () => {
       const shell = this.shells.get(shellId);
       if (!shell) {
-        throw new Error('Shell not found');
+        return;
       }
       void this.killShell({ shell_id: shellId });
     });
-
-    channel.write(input.command + '\n');
 
     return { output: '', shellId };
   }
@@ -282,14 +290,25 @@ export class BashTool {
     if (!shell) {
       return { killed: false };
     }
-    return new Promise((resolve, reject) => {
-      shell.channel.on('close', () => {
+
+    return new Promise((resolve) => {
+      shell.process.on('close', () => {
         resolve({ killed: true });
       });
-      shell.channel.on('error', (err: unknown) => {
-        reject(err);
+
+      shell.process.on('error', () => {
+        resolve({ killed: false });
       });
-      shell.channel.signal(input.signal ?? 'KILL');
+
+      // Node.js expects 'SIGTERM', 'SIGKILL', etc.
+      // SSH2 uses 'TERM', 'KILL', etc.
+      // Normalize the signal name
+      const baseSignal = input.signal ?? 'KILL';
+      const signal = (
+        baseSignal.startsWith('SIG') ? baseSignal : `SIG${baseSignal}`
+      ) as NodeJS.Signals;
+
+      shell.process.kill(signal);
     });
   }
 }
