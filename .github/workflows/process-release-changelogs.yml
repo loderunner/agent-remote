@@ -1,0 +1,53 @@
+name: Process Release Changelogs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**/CHANGELOG.md'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  process-changelogs:
+    # Only run on release-please PRs
+    if: |
+      startsWith(github.head_ref, 'release-please--') ||
+      contains(github.event.pull_request.labels.*.name, 'autorelease: pending')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Remove scopes from changelogs
+        run: node .github/scripts/remove-changelog-scopes.js packages
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No changelog changes needed"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Changelog changes detected"
+          fi
+
+      - name: Commit changes
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -u packages/**/CHANGELOG.md
+          git commit -m "chore: remove scopes from changelog entries"
+          git push
