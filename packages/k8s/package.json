@@ -1,0 +1,73 @@
+{
+  "name": "@agent-remote/k8s",
+  "version": "0.0.1",
+  "description": "Kubernetes remote tools for AI agents",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/lib/index.ts"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "dist/cjs/index.cjs",
+    "module": "dist/esm/index.js",
+    "types": "dist/index.d.ts",
+    "bin": {
+      "remote-k8s-mcp": "./dist/server.js"
+    },
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/esm/index.js",
+        "require": "./dist/cjs/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "build:watch": "tsdown --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run --project=unit",
+    "test:integration": "vitest run --project=integration",
+    "test:e2e": "vitest run --project=e2e",
+    "test:watch:unit": "vitest --project=unit",
+    "test:watch:integration": "vitest --project=integration",
+    "test:watch:e2e": "vitest --project=e2e",
+    "server": "tsx src/server/server.ts",
+    "server:watch": "tsx --watch src/server/server.ts",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "diff": "^8.0.2",
+    "minimatch": "^10.0.3",
+    "nanoid": "^5.1.6",
+    "pino": "^10.1.0",
+    "pino-pretty": "^13.1.2",
+    "yargs": "^18.0.0",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.24.6",
+    "zod-validation-error": "^4.0.2"
+  },
+  "peerDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.0",
+    "@modelcontextprotocol/sdk": "^1.20.0"
+  },
+  "devDependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.1.21",
+    "@agent-remote/core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.20.0",
+    "@types/yargs": "^17.0.33",
+    "rimraf": "^6.0.1",
+    "tsdown": "^0.15.9",
+    "tslib": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

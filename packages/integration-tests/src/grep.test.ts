@@ -1,9 +1,11 @@
 import { GrepTool as DockerGrepTool } from '@agent-remote/docker';
+import { GrepTool as K8sGrepTool } from '@agent-remote/k8s';
 import { GrepTool as SSHGrepTool } from '@agent-remote/ssh';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
   getDockerContainer,
+  getK8sConfig,
   getSSHClient,
   setupSSH,
   teardownSSH,
@@ -20,7 +22,7 @@ describe('Integration Tests', () => {
 
   const implementations: Array<{
     name: string;
-    createGrepTool: () => SSHGrepTool | DockerGrepTool;
+    createGrepTool: () => SSHGrepTool | DockerGrepTool | K8sGrepTool;
   }> = [
     {
       name: 'ssh',
@@ -31,12 +33,17 @@ describe('Integration Tests', () => {
       createGrepTool: () =>
         new DockerGrepTool({ container: getDockerContainer(), shell: 'sh' }),
     },
+    {
+      name: 'k8s',
+      createGrepTool: () =>
+        new K8sGrepTool({ ...getK8sConfig(), shell: 'sh' }),
+    },
   ];
 
   describe.each(implementations)(
     'GrepTool ($name)',
     ({ name: _name, createGrepTool }) => {
-      let grepTool: SSHGrepTool | DockerGrepTool;
+      let grepTool: SSHGrepTool | DockerGrepTool | K8sGrepTool;
 
       beforeAll(() => {
         grepTool = createGrepTool();

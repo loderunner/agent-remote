@@ -1,9 +1,11 @@
 import { GlobTool as DockerGlobTool } from '@agent-remote/docker';
+import { GlobTool as K8sGlobTool } from '@agent-remote/k8s';
 import { GlobTool as SSHGlobTool } from '@agent-remote/ssh';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import {
   getDockerContainer,
+  getK8sConfig,
   getSSHClient,
   setupSSH,
   teardownSSH,
@@ -20,7 +22,7 @@ describe('Integration Tests', () => {
 
   const implementations: Array<{
     name: string;
-    createGlobTool: () => SSHGlobTool | DockerGlobTool;
+    createGlobTool: () => SSHGlobTool | DockerGlobTool | K8sGlobTool;
   }> = [
     {
       name: 'ssh',
@@ -31,12 +33,17 @@ describe('Integration Tests', () => {
       createGlobTool: () =>
         new DockerGlobTool({ container: getDockerContainer(), shell: 'sh' }),
     },
+    {
+      name: 'k8s',
+      createGlobTool: () =>
+        new K8sGlobTool({ ...getK8sConfig(), shell: 'sh' }),
+    },
   ];
 
   describe.each(implementations)(
     'GlobTool ($name)',
     ({ name: _name, createGlobTool }) => {
-      let globTool: SSHGlobTool | DockerGlobTool;
+      let globTool: SSHGlobTool | DockerGlobTool | K8sGlobTool;
 
       beforeAll(() => {
         globTool = createGlobTool();

@@ -62,3 +62,13 @@ export function getSSHSFTP(): SFTPWrapper {
 export function getDockerContainer(): string {
   return 'sandbox';
 }
+
+/**
+ * Get the Kubernetes pod configuration for testing
+ */
+export function getK8sConfig(): { pod: string; namespace: string } {
+  return {
+    pod: 'sandbox',
+    namespace: 'default',
+  };
+}
