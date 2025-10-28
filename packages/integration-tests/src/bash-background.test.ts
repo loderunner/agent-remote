@@ -1,7 +1,45 @@
-import { BashTool } from '@agent-remote/ssh';
+import type { BashOutputOutput } from '@agent-remote/core';
+import { BashTool as DockerBashTool } from '@agent-remote/docker';
+import { BashTool as SSHBashTool } from '@agent-remote/ssh';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { getSSHClient, setupSSH, teardownSSH } from './setup';
+import {
+  getDockerContainer,
+  getSSHClient,
+  setupSSH,
+  teardownSSH,
+} from './setup';
+
+/**
+ * Helper to wait for a background command to complete or produce output.
+ * Docker exec has startup overhead (~150ms), so we poll instead of fixed wait.
+ */
+async function waitForBackgroundOutput(
+  bashTool: SSHBashTool | DockerBashTool,
+  shellId: string,
+  options: { timeout?: number; filter?: string } = {},
+): Promise<BashOutputOutput> {
+  const timeout = options.timeout ?? 2000;
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeout) {
+    const output = await bashTool.getOutput({
+      shell_id: shellId,
+      filter: options.filter,
+    });
+
+    // Return if we have output or if command completed
+    if (output.output || output.status === 'completed') {
+      return output;
+    }
+
+    // Wait a bit before checking again
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+
+  // Final check
+  return bashTool.getOutput({ shell_id: shellId, filter: options.filter });
+}
 
 describe('Integration Tests', () => {
   beforeAll(async () => {
@@ -14,18 +52,22 @@ describe('Integration Tests', () => {
 
   const implementations: Array<{
     name: string;
-    createBashTool: () => BashTool;
+    createBashTool: () => SSHBashTool | DockerBashTool;
   }> = [
     {
       name: 'ssh',
-      createBashTool: () => new BashTool(getSSHClient()),
+      createBashTool: () => new SSHBashTool(getSSHClient()),
+    },
+    {
+      name: 'docker',
+      createBashTool: () => new DockerBashTool(getDockerContainer(), 'bash'),
     },
   ];
 
   describe.each(implementations)(
     'BashTool Background ($name)',
     ({ name: _name, createBashTool }) => {
-      let bashTool: BashTool;
+      let bashTool: SSHBashTool | DockerBashTool;
 
       beforeAll(() => {
         bashTool = createBashTool();
@@ -41,10 +83,11 @@ describe('Integration Tests', () => {
         expect(result.shellId).toHaveLength(8);
         expect(result.output).toBe('');
 
-        // Give it time to complete
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const output = await bashTool.getOutput({ shell_id: result.shellId! });
+        // Poll for output (handles Docker exec startup time)
+        const output = await waitForBackgroundOutput(
+          bashTool,
+          result.shellId!,
+        );
         expect(output.output).toContain('Hello, Background!');
         expect(output.status).toBe('completed');
         expect(output.exitCode).toBe(0);
@@ -59,9 +102,7 @@ describe('Integration Tests', () => {
 
         expect(result.shellId).toBeDefined();
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const output = await bashTool.getOutput({ shell_id: result.shellId! });
+        const output = await waitForBackgroundOutput(bashTool, result.shellId!);
         // Should contain the actual output
         expect(output.output).toContain('test output for no echo');
         // Should NOT contain the command itself
@@ -78,9 +119,7 @@ describe('Integration Tests', () => {
 
         expect(result.shellId).toBeDefined();
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const output = await bashTool.getOutput({ shell_id: result.shellId! });
+        const output = await waitForBackgroundOutput(bashTool, result.shellId!);
         // Output should be completely empty for a command with no output
         expect(output.output).toBe('');
         expect(output.status).toBe('completed');
@@ -147,9 +186,7 @@ describe('Integration Tests', () => {
 
         expect(result.shellId).toBeDefined();
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const output = await bashTool.getOutput({ shell_id: result.shellId! });
+        const output = await waitForBackgroundOutput(bashTool, result.shellId!);
         expect(output.output).toContain('stdout message');
         expect(output.output).toContain('stderr message');
         expect(output.status).toBe('completed');
@@ -164,9 +201,7 @@ describe('Integration Tests', () => {
 
         expect(result.shellId).toBeDefined();
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const output = await bashTool.getOutput({ shell_id: result.shellId! });
+        const output = await waitForBackgroundOutput(bashTool, result.shellId!);
         expect(output.output).toContain('No such file or directory');
         expect(output.status).toBe('completed');
         expect(output.exitCode).not.toBe(0);
@@ -181,12 +216,7 @@ describe('Integration Tests', () => {
 
         expect(result.shellId).toBeDefined();
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const output = await bashTool.getOutput({
-          shell_id: result.shellId!,
-          filter: '^found',
-        });
+        const output = await waitForBackgroundOutput(bashTool, result.shellId!, { filter: '^found' });
 
         expect(output.output).toContain('found1');
         expect(output.output).toContain('found2');
@@ -216,17 +246,18 @@ describe('Integration Tests', () => {
         expect(result1.shellId).not.toBe(result2.shellId);
         expect(result2.shellId).not.toBe(result3.shellId);
 
-        await new Promise((resolve) => setTimeout(resolve, 600));
-
-        const output1 = await bashTool.getOutput({
-          shell_id: result1.shellId!,
-        });
-        const output2 = await bashTool.getOutput({
-          shell_id: result2.shellId!,
-        });
-        const output3 = await bashTool.getOutput({
-          shell_id: result3.shellId!,
-        });
+        const output1 = await waitForBackgroundOutput(
+          bashTool,
+          result1.shellId!,
+        );
+        const output2 = await waitForBackgroundOutput(
+          bashTool,
+          result2.shellId!,
+        );
+        const output3 = await waitForBackgroundOutput(
+          bashTool,
+          result3.shellId!,
+        );
 
         expect(output1.output).toContain('first done');
         expect(output2.output).toContain('second done');
@@ -245,7 +276,7 @@ describe('Integration Tests', () => {
         expect(result.shellId).toBeDefined();
 
         // Verify it's running
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Replaced with polling helper
         const output1 = await bashTool.getOutput({ shell_id: result.shellId! });
         expect(output1.status).toBe('running');
 
@@ -256,7 +287,7 @@ describe('Integration Tests', () => {
         expect(killResult.killed).toBeTrue();
 
         // Verify it's no longer running
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Replaced with polling helper
         const output2 = await bashTool.getOutput({ shell_id: result.shellId! });
         expect(output2.status).toBe('completed');
         expect(output2.output).not.toContain('should not see this');
@@ -272,7 +303,7 @@ describe('Integration Tests', () => {
         expect(result.shellId).toBeDefined();
 
         // Verify it's running
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Replaced with polling helper
         const output1 = await bashTool.getOutput({ shell_id: result.shellId! });
         expect(output1.status).toBe('running');
 
@@ -284,7 +315,7 @@ describe('Integration Tests', () => {
         expect(killResult.killed).toBe(true);
 
         // Verify it was terminated with the correct signal
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Replaced with polling helper
         const output2 = await bashTool.getOutput({ shell_id: result.shellId! });
         expect(output2.status).toBe('completed');
         expect(output2.signal).toBe('SIGTERM');
@@ -328,9 +359,7 @@ describe('Integration Tests', () => {
 
         expect(result.shellId).toBeDefined();
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const output = await bashTool.getOutput({ shell_id: result.shellId! });
+        const output = await waitForBackgroundOutput(bashTool, result.shellId!);
         expect(output.output).toContain('HELLO WORLD');
         expect(output.status).toBe('completed');
         expect(output.exitCode).toBe(0);
@@ -344,14 +373,20 @@ describe('Integration Tests', () => {
 
         expect(result.shellId).toBeDefined();
 
-        // First read
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        const output1 = await bashTool.getOutput({ shell_id: result.shellId! });
+        // First read - wait for first message
+        const output1 = await waitForBackgroundOutput(
+          bashTool,
+          result.shellId!,
+        );
         expect(output1.output).toContain('message1');
 
-        // Second read - should only have new output
-        await new Promise((resolve) => setTimeout(resolve, 400));
-        const output2 = await bashTool.getOutput({ shell_id: result.shellId! });
+        // Second read - wait for command to complete and get second message
+        // The first message was cleared by the first getOutput call
+        const output2 = await waitForBackgroundOutput(
+          bashTool,
+          result.shellId!,
+          { timeout: 1000 },
+        );
         expect(output2.output).not.toContain('message1');
         expect(output2.output).toContain('message2');
       });
@@ -364,9 +399,7 @@ describe('Integration Tests', () => {
 
         expect(result.shellId).toBeDefined();
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const output = await bashTool.getOutput({ shell_id: result.shellId! });
+        const output = await waitForBackgroundOutput(bashTool, result.shellId!);
         expect(output.output).toContain('background test');
         expect(output.status).toBe('completed');
       });
@@ -380,9 +413,7 @@ describe('Integration Tests', () => {
 
         expect(result.shellId).toBeDefined();
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const output = await bashTool.getOutput({ shell_id: result.shellId! });
+        const output = await waitForBackgroundOutput(bashTool, result.shellId!);
         expect(output.output).toContain('background content');
         expect(output.status).toBe('completed');
         expect(output.exitCode).toBe(0);
@@ -398,7 +429,7 @@ describe('Integration Tests', () => {
         expect(result.shellId).toBeDefined();
 
         // Check immediately - should be running
-        await new Promise((resolve) => setTimeout(resolve, 100));
+        // Replaced with polling helper
         const output1 = await bashTool.getOutput({ shell_id: result.shellId! });
         expect(output1.status).toBe('running');
 
@@ -456,9 +487,7 @@ describe('Integration Tests', () => {
 
         expect(result.shellId).toBeDefined();
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const output = await bashTool.getOutput({ shell_id: result.shellId! });
+        const output = await waitForBackgroundOutput(bashTool, result.shellId!);
         expect(output.output).toContain('line1 stdout');
         expect(output.output).toContain('line2 stderr');
         expect(output.output).toContain('line3 stdout');
@@ -475,9 +504,7 @@ describe('Integration Tests', () => {
 
         expect(result.shellId).toBeDefined();
 
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const output = await bashTool.getOutput({ shell_id: result.shellId! });
+        const output = await waitForBackgroundOutput(bashTool, result.shellId!);
         // Verify all content is captured
         expect(output.output).toContain('stdout1');
         expect(output.output).toContain('stderr1');

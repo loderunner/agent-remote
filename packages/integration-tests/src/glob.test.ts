@@ -1,7 +1,13 @@
-import { GlobTool } from '@agent-remote/ssh';
+import { GlobTool as DockerGlobTool } from '@agent-remote/docker';
+import { GlobTool as SSHGlobTool } from '@agent-remote/ssh';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { getSSHClient, setupSSH, teardownSSH } from './setup';
+import {
+  getDockerContainer,
+  getSSHClient,
+  setupSSH,
+  teardownSSH,
+} from './setup';
 
 describe('Integration Tests', () => {
   beforeAll(async () => {
@@ -14,18 +20,22 @@ describe('Integration Tests', () => {
 
   const implementations: Array<{
     name: string;
-    createGlobTool: () => GlobTool;
+    createGlobTool: () => SSHGlobTool | DockerGlobTool;
   }> = [
     {
       name: 'ssh',
-      createGlobTool: () => new GlobTool(getSSHClient()),
+      createGlobTool: () => new SSHGlobTool(getSSHClient()),
+    },
+    {
+      name: 'docker',
+      createGlobTool: () => new DockerGlobTool(getDockerContainer()),
     },
   ];
 
   describe.each(implementations)(
     'GlobTool ($name)',
     ({ name: _name, createGlobTool }) => {
-      let globTool: GlobTool;
+      let globTool: SSHGlobTool | DockerGlobTool;
 
       beforeAll(() => {
         globTool = createGlobTool();

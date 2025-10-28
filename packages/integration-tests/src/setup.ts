@@ -55,3 +55,10 @@ export function getSSHClient(): Client {
 export function getSSHSFTP(): SFTPWrapper {
   return sftp;
 }
+
+/**
+ * Get the Docker container name for testing
+ */
+export function getDockerContainer(): string {
+  return 'sandbox';
+}

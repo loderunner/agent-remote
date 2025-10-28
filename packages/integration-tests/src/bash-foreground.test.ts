@@ -1,7 +1,13 @@
-import { BashTool } from '@agent-remote/ssh';
+import { BashTool as DockerBashTool } from '@agent-remote/docker';
+import { BashTool as SSHBashTool } from '@agent-remote/ssh';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { getSSHClient, setupSSH, teardownSSH } from './setup';
+import {
+  getDockerContainer,
+  getSSHClient,
+  setupSSH,
+  teardownSSH,
+} from './setup';
 
 describe('Integration Tests', () => {
   beforeAll(async () => {
@@ -14,18 +20,22 @@ describe('Integration Tests', () => {
 
   const implementations: Array<{
     name: string;
-    createBashTool: () => BashTool;
+    createBashTool: () => SSHBashTool | DockerBashTool;
   }> = [
     {
       name: 'ssh',
-      createBashTool: () => new BashTool(getSSHClient()),
+      createBashTool: () => new SSHBashTool(getSSHClient()),
+    },
+    {
+      name: 'docker',
+      createBashTool: () => new DockerBashTool(getDockerContainer(), 'bash'),
     },
   ];
 
   describe.each(implementations)(
     'BashTool Foreground ($name)',
     ({ name: _name, createBashTool }) => {
-      let bashTool: BashTool;
+      let bashTool: SSHBashTool | DockerBashTool;
 
       beforeAll(() => {
         bashTool = createBashTool();
@@ -218,23 +228,6 @@ describe('Integration Tests', () => {
         expect(lines.some((line: string) => line.includes('test output'))).toBe(
           true,
         );
-      });
-
-      it('should not leak event listeners after multiple executions', async () => {
-        const shell = await bashTool.init();
-
-        // Get initial listener counts
-        const initialDataListeners = shell.listenerCount('data');
-        const initialErrorListeners = shell.listenerCount('error');
-
-        // Run multiple commands
-        for (let i = 0; i < 5; i++) {
-          await bashTool.execute({ command: `echo "test ${i}"` });
-        }
-
-        // Verify listener counts haven't increased
-        expect(shell.listenerCount('data')).toBe(initialDataListeners);
-        expect(shell.listenerCount('error')).toBe(initialErrorListeners);
       });
 
       it('should timeout a long-running foreground command', async () => {

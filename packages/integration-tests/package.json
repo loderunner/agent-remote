@@ -8,10 +8,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ssh": "vitest run --testNamePattern ssh",
-    "test:watch:ssh": "vitest --testNamePattern ssh"
+    "test:watch:ssh": "vitest --testNamePattern ssh",
+    "test:docker": "vitest run --testNamePattern docker",
+    "test:watch:docker": "vitest --testNamePattern docker"
   },
   "dependencies": {
     "@agent-remote/core": "workspace:*",
+    "@agent-remote/docker": "workspace:*",
     "@agent-remote/ssh": "workspace:*",
     "ssh2": "^1.17.0"
   },

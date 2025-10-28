@@ -1,0 +1,35 @@
+import { describe, expect, it } from 'vitest';
+
+import { BashTool } from './bash';
+
+/**
+ * Unit tests specific to Docker BashTool implementation
+ */
+
+describe('Docker BashTool - Unit Tests', () => {
+  describe('Event Listener Management', () => {
+    it('should not leak event listeners after multiple executions', async () => {
+      const bashTool = new BashTool('sandbox');
+
+      // Execute init to get the shell process
+      const shell = await bashTool.init();
+
+      // Get initial listener counts
+      const initialStdoutListeners = shell.stdout?.listenerCount('data') ?? 0;
+      const initialStderrListeners = shell.stderr?.listenerCount('data') ?? 0;
+      const initialErrorListeners = shell.listenerCount('error');
+
+      // Run multiple commands
+      for (let i = 0; i < 5; i++) {
+        await bashTool.execute({ command: `echo "test ${i}"` });
+      }
+
+      // Verify listener counts haven't increased
+      expect(shell.stdout?.listenerCount('data')).toBe(initialStdoutListeners);
+      expect(shell.stderr?.listenerCount('data')).toBe(initialStderrListeners);
+      expect(shell.listenerCount('error')).toBe(initialErrorListeners);
+    });
+  });
+});
+
+

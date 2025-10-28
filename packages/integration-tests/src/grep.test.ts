@@ -1,7 +1,13 @@
-import { GrepTool } from '@agent-remote/ssh';
+import { GrepTool as DockerGrepTool } from '@agent-remote/docker';
+import { GrepTool as SSHGrepTool } from '@agent-remote/ssh';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { getSSHClient, setupSSH, teardownSSH } from './setup';
+import {
+  getDockerContainer,
+  getSSHClient,
+  setupSSH,
+  teardownSSH,
+} from './setup';
 
 describe('Integration Tests', () => {
   beforeAll(async () => {
@@ -14,18 +20,22 @@ describe('Integration Tests', () => {
 
   const implementations: Array<{
     name: string;
-    createGrepTool: () => GrepTool;
+    createGrepTool: () => SSHGrepTool | DockerGrepTool;
   }> = [
     {
       name: 'ssh',
-      createGrepTool: () => new GrepTool(getSSHClient()),
+      createGrepTool: () => new SSHGrepTool(getSSHClient()),
+    },
+    {
+      name: 'docker',
+      createGrepTool: () => new DockerGrepTool(getDockerContainer()),
     },
   ];
 
   describe.each(implementations)(
     'GrepTool ($name)',
     ({ name: _name, createGrepTool }) => {
-      let grepTool: GrepTool;
+      let grepTool: SSHGrepTool | DockerGrepTool;
 
       beforeAll(() => {
         grepTool = createGrepTool();
