@@ -3,6 +3,30 @@
   "version": "0.0.3",
   "description": "SSH remote tools for AI agents",
   "license": "Apache-2.0",
+  "author": "Charles Francoise",
+  "homepage": "https://github.com/loderunner/agent-remote#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loderunner/agent-remote.git",
+    "directory": "packages/ssh"
+  },
+  "bugs": {
+    "url": "https://github.com/loderunner/agent-remote/issues"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "remote",
+    "ssh",
+    "ssh2",
+    "mcp",
+    "model-context-protocol",
+    "tools",
+    "automation",
+    "anthropic",
+    "claude",
+    "agent-sdk"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/lib/index.ts"
