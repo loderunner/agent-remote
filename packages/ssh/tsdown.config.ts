@@ -1,6 +1,3 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-
 import type { Options } from 'tsdown';
 import { defineConfig } from 'tsdown';
 
@@ -34,18 +31,6 @@ export const serverTarget: Options = {
   banner: `#!/usr/bin/env node`,
   outDir: 'dist',
   noExternal: ['@agent-remote/core'],
-  plugins: [
-    {
-      name: 'chmod',
-      writeBundle: async (options, bundle) => {
-        for (const [_, output] of Object.entries(bundle)) {
-          if (output.type === 'chunk' && output.isEntry) {
-            await fs.chmod(path.join(options.dir!, output.fileName), 0o755);
-          }
-        }
-      },
-    },
-  ],
   dts: false,
   shims: false,
   clean: false,
