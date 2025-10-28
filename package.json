@@ -3,6 +3,26 @@
   "version": "0.0.1",
   "description": "Remote execution tools for AI agents",
   "license": "Apache-2.0",
+  "author": "Charles Francoise",
+  "homepage": "https://github.com/loderunner/agent-remote#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loderunner/agent-remote.git"
+  },
+  "bugs": {
+    "url": "https://github.com/loderunner/agent-remote/issues"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "remote",
+    "ssh",
+    "mcp",
+    "model-context-protocol",
+    "automation",
+    "anthropic",
+    "claude"
+  ],
   "private": true,
   "type": "module",
   "scripts": {

@@ -3,6 +3,26 @@
   "version": "0.0.2",
   "description": "Core types and schemas for agent-remote tools",
   "license": "Apache-2.0",
+  "author": "Charles Francoise",
+  "homepage": "https://github.com/loderunner/agent-remote#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/loderunner/agent-remote.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/loderunner/agent-remote/issues"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "remote",
+    "tools",
+    "types",
+    "schemas",
+    "mcp",
+    "model-context-protocol"
+  ],
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
