@@ -4,7 +4,7 @@
  * Post-processes CHANGELOG.md files to:
  * 1. Filter entries by scope (keep only entries matching the package name)
  * 2. Remove scope prefixes from remaining entries
- * 
+ *
  * For example, in packages/ssh/CHANGELOG.md:
  * - Keep: * **ssh:** only run specified tsdown build
  * - Remove: * **docker:** docker remote tools
@@ -32,7 +32,7 @@ function extractScope(line) {
  */
 function extractPackageName(changelogPath) {
   const parts = changelogPath.split(path.sep);
-  const changelogIndex = parts.findIndex(p => p === 'CHANGELOG.md');
+  const changelogIndex = parts.findIndex((p) => p === 'CHANGELOG.md');
   if (changelogIndex > 0) {
     return parts[changelogIndex - 1];
   }
@@ -47,9 +47,9 @@ function scopeMatchesPackage(scope, packageName) {
   if (!scope || !packageName) {
     return false;
   }
-  
+
   // Handle multiple scopes like "ssh,docker"
-  const scopes = scope.split(',').map(s => s.trim());
+  const scopes = scope.split(',').map((s) => s.trim());
   return scopes.includes(packageName);
 }
 
@@ -60,26 +60,26 @@ function cleanEmptySections(content) {
   const lines = content.split('\n');
   const result = [];
   let i = 0;
-  
+
   while (i < lines.length) {
     const line = lines[i];
-    
+
     // Check if this is a section header (### Something)
     if (line.match(/^###\s+/)) {
       // Look ahead to see if there are any entries in this section
       let j = i + 1;
       let hasEntries = false;
-      
+
       // Skip empty lines after the header
       while (j < lines.length && lines[j].trim() === '') {
         j++;
       }
-      
+
       // Check if next non-empty line is an entry (starts with *)
       if (j < lines.length && lines[j].match(/^\s*\*/)) {
         hasEntries = true;
       }
-      
+
       if (hasEntries) {
         // Keep the section header
         result.push(line);
@@ -90,14 +90,14 @@ function cleanEmptySections(content) {
     } else {
       result.push(line);
     }
-    
+
     i++;
   }
-  
+
   // Remove any trailing empty lines before the next section
   let cleaned = result.join('\n');
   cleaned = cleaned.replace(/\n\n\n+/g, '\n\n'); // Reduce multiple empty lines to double
-  
+
   return cleaned;
 }
 
@@ -109,20 +109,23 @@ function processChangelogContent(content, packageName) {
     // If we can't determine package name, just remove scopes without filtering
     return content.replace(/^(\s*\*)\s+\*\*[^:*]+:\*\*\s+/gm, '$1 ');
   }
-  
+
   const lines = content.split('\n');
   const result = [];
   let i = 0;
-  
+
   while (i < lines.length) {
     const line = lines[i];
     const scope = extractScope(line);
-    
+
     if (scope !== null) {
       // This is a changelog entry with a scope
       if (scopeMatchesPackage(scope, packageName)) {
         // Keep this entry and remove the scope prefix
-        const cleanedLine = line.replace(/^(\s*\*)\s+\*\*[^:*]+:\*\*\s+/, '$1 ');
+        const cleanedLine = line.replace(
+          /^(\s*\*)\s+\*\*[^:*]+:\*\*\s+/,
+          '$1 ',
+        );
         result.push(cleanedLine);
       }
       // else: skip this line (different scope)
@@ -130,10 +133,10 @@ function processChangelogContent(content, packageName) {
       // Not a scoped entry, keep as-is
       result.push(line);
     }
-    
+
     i++;
   }
-  
+
   const filtered = result.join('\n');
   return cleanEmptySections(filtered);
 }
@@ -143,10 +146,10 @@ function processChangelogContent(content, packageName) {
  */
 function findChangelogFiles(dir, files = []) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
-  
+
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
-    
+
     if (entry.isDirectory()) {
       // Skip node_modules and hidden directories
       if (entry.name !== 'node_modules' && !entry.name.startsWith('.')) {
@@ -156,7 +159,7 @@ function findChangelogFiles(dir, files = []) {
       files.push(fullPath);
     }
   }
-  
+
   return files;
 }
 
@@ -165,21 +168,29 @@ function findChangelogFiles(dir, files = []) {
  */
 function processChangelogFile(filePath) {
   const packageName = extractPackageName(filePath);
-  console.log(`Processing ${filePath}${packageName ? ` (package: ${packageName})` : ''}...`);
-  
+  console.log(
+    `Processing ${filePath}${packageName ? ` (package: ${packageName})` : ''}...`,
+  );
+
   const content = fs.readFileSync(filePath, 'utf8');
   const processed = processChangelogContent(content, packageName);
-  
+
   if (content !== processed) {
     fs.writeFileSync(filePath, processed, 'utf8');
-    
+
     // Count changes
-    const originalLines = content.split('\n').filter(l => extractScope(l) !== null);
-    const processedLines = processed.split('\n').filter(l => extractScope(l) !== null);
+    const originalLines = content
+      .split('\n')
+      .filter((l) => extractScope(l) !== null);
+    const processedLines = processed
+      .split('\n')
+      .filter((l) => extractScope(l) !== null);
     const removedCount = originalLines.length - processedLines.length;
-    
+
     if (removedCount > 0) {
-      console.log(`  ✓ Filtered ${removedCount} entry/entries with non-matching scope(s)`);
+      console.log(
+        `  ✓ Filtered ${removedCount} entry/entries with non-matching scope(s)`,
+      );
     }
     console.log(`  ✓ Removed scope prefixes from ${filePath}`);
     return true;
@@ -194,28 +205,30 @@ function processChangelogFile(filePath) {
  */
 function main() {
   const searchPath = process.argv[2] || process.cwd();
-  
+
   console.log(`Searching for CHANGELOG.md files in: ${searchPath}\n`);
-  
+
   const files = fs.statSync(searchPath).isDirectory()
     ? findChangelogFiles(searchPath)
     : [searchPath];
-  
+
   if (files.length === 0) {
     console.log('No changelog files found.');
     return;
   }
-  
+
   console.log(`Found ${files.length} changelog file(s)\n`);
-  
+
   let modifiedCount = 0;
   for (const file of files) {
     if (processChangelogFile(file)) {
       modifiedCount++;
     }
   }
-  
-  console.log(`\nProcessed ${files.length} file(s), modified ${modifiedCount} file(s)`);
+
+  console.log(
+    `\nProcessed ${files.length} file(s), modified ${modifiedCount} file(s)`,
+  );
 }
 
 main();
