@@ -26,24 +26,16 @@ function extractScope(line) {
 
 /**
  * Extract package name from changelog path
+ * Uses the parent directory of CHANGELOG.md
  * e.g., "packages/ssh/CHANGELOG.md" -> "ssh"
  * e.g., "/some/path/docker/CHANGELOG.md" -> "docker"
  */
 function extractPackageName(changelogPath) {
   const parts = changelogPath.split(path.sep);
-  
-  // First try to find it after "packages" directory
-  const packagesIndex = parts.indexOf('packages');
-  if (packagesIndex >= 0 && packagesIndex < parts.length - 1) {
-    return parts[packagesIndex + 1];
-  }
-  
-  // Otherwise, use the parent directory of CHANGELOG.md
   const changelogIndex = parts.findIndex(p => p === 'CHANGELOG.md');
   if (changelogIndex > 0) {
     return parts[changelogIndex - 1];
   }
-  
   return null;
 }
 
