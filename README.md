@@ -1,6 +1,5 @@
 # agent-remote
 
-[![npm version](https://img.shields.io/npm/v/@agent-remote/ssh.svg)](https://www.npmjs.com/package/@agent-remote/ssh)
 [![CircleCI](https://dl.circleci.com/status-badge/img/circleci/27HiJjfeSar9ELMpivBc9u/VyteHXLsZWYgWKcZqQgFP3/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/circleci/27HiJjfeSar9ELMpivBc9u/VyteHXLsZWYgWKcZqQgFP3/tree/main)
 [![GitHub Actions](https://github.com/loderunner/agent-remote/workflows/Release%20Please/badge.svg)](https://github.com/loderunner/agent-remote/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
