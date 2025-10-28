@@ -8,6 +8,8 @@ Remote execution tools for AI agents. Connect AI agents to remote systems via
 SSH to execute commands, manage files, and search filesystems on remote
 machines.
 
+![Banner](./banner.png)
+
 ## Packages
 
 - **[@agent-remote/core](packages/core)** - Core types and schemas for remote
