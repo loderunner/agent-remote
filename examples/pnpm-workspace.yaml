@@ -4,3 +4,4 @@ packages:
 
 overrides:
   '@agent-remote/ssh': link:../packages/ssh
+  '@agent-remote/docker': link:../packages/docker

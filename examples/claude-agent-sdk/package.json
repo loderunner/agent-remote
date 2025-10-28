@@ -1,17 +1,19 @@
 {
   "name": "claude-agent-sdk-example",
   "version": "0.0.1",
-  "description": "Example of using @agent-remote/ssh with Claude Agent SDK",
+  "description": "Example of using @agent-remote with Claude Agent SDK",
   "license": "Apache-2.0",
   "type": "module",
   "private": true,
   "scripts": {
-    "start": "tsx index.ts"
+    "start:ssh": "tsx index.ts ssh",
+    "start:docker": "tsx index.ts docker"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.21",
     "@anthropic-ai/sdk": "^0.37.0",
-    "@agent-remote/ssh": "^0.0.1",
+    "@agent-remote/ssh": "^0.0.3",
+    "@agent-remote/docker": "^0.0.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
