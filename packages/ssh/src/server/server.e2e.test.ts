@@ -75,7 +75,7 @@ describe('MCP Server Executable - End-to-End Tests', () => {
   beforeAll(async () => {
     try {
       // Build the project
-      await build({ ...serverTarget, logLevel: 'silent' });
+      await build({ ...serverTarget, logLevel: 'silent', config: false });
 
       // Use the built executable
     } catch (error) {
