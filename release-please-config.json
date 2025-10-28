@@ -13,6 +13,11 @@
       "release-type": "node",
       "package-name": "@agent-remote/ssh",
       "changelog-path": "CHANGELOG.md"
+    },
+    "packages/docker": {
+      "release-type": "node",
+      "package-name": "@agent-remote/docker",
+      "changelog-path": "CHANGELOG.md"
     }
   },
   "plugins": [
