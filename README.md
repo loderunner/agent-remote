@@ -1,10 +1,9 @@
 # agent-remote
 
 [![npm version](https://img.shields.io/npm/v/@agent-remote/ssh.svg)](https://www.npmjs.com/package/@agent-remote/ssh)
-[![CircleCI](https://dl.circleci.com/status-badge/img/gh/loderunner/agent-remote/tree/main.svg?style=shield)](https://dl.circleci.com/status-badge/redirect/gh/loderunner/agent-remote/tree/main)
+[![CircleCI](https://dl.circleci.com/status-badge/img/circleci/27HiJjfeSar9ELMpivBc9u/VyteHXLsZWYgWKcZqQgFP3/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/circleci/27HiJjfeSar9ELMpivBc9u/VyteHXLsZWYgWKcZqQgFP3/tree/main)
 [![GitHub Actions](https://github.com/loderunner/agent-remote/workflows/Release%20Please/badge.svg)](https://github.com/loderunner/agent-remote/actions)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 
 Remote execution tools for AI agents. Connect AI agents to remote systems via
 SSH to execute commands, manage files, and search filesystems on remote
