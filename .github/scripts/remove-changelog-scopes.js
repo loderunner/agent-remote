@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 
 /**
- * Post-processes CHANGELOG.md files to remove conventional commit scopes
- * from changelog entries.
+ * Post-processes CHANGELOG.md files to:
+ * 1. Filter entries by scope (keep only entries matching the package name)
+ * 2. Remove scope prefixes from remaining entries
  * 
- * Transforms entries like:
- *   * **docker:** docker remote tools (#20)
- * Into:
- *   * docker remote tools (#20)
+ * For example, in packages/ssh/CHANGELOG.md:
+ * - Keep: * **ssh:** only run specified tsdown build
+ * - Remove: * **docker:** docker remote tools
+ * - Then transform: * **ssh:** ... -> * ...
  */
 
 import fs from 'fs';
@@ -15,20 +16,134 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 /**
- * Remove scope prefixes from a changelog line
- * Pattern matches: * **scope:** rest of line
+ * Extract scope from a changelog line
+ * Returns the scope name or null if no scope found
  */
-function removeScopeFromLine(content) {
-  // Match changelog bullet points with bold scope prefix
-  // e.g., "* **docker:** docker remote tools" becomes "* docker remote tools"
-  // Pattern explanation:
-  // - ^(\s*\*) - line start with optional whitespace and asterisk (bullet)
-  // - \s+ - one or more spaces
-  // - \*\* - opening bold markers
-  // - [^:*]+ - scope name (chars that aren't colon or asterisk)
-  // - :\*\* - colon inside the bold, then closing bold markers
-  // - \s+ - one or more spaces after
-  return content.replace(/^(\s*\*)\s+\*\*[^:*]+:\*\*\s+/gm, '$1 ');
+function extractScope(line) {
+  const match = line.match(/^\s*\*\s+\*\*([^:*]+):\*\*\s+/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Extract package name from changelog path
+ * e.g., "packages/ssh/CHANGELOG.md" -> "ssh"
+ * e.g., "/some/path/docker/CHANGELOG.md" -> "docker"
+ */
+function extractPackageName(changelogPath) {
+  const parts = changelogPath.split(path.sep);
+  
+  // First try to find it after "packages" directory
+  const packagesIndex = parts.indexOf('packages');
+  if (packagesIndex >= 0 && packagesIndex < parts.length - 1) {
+    return parts[packagesIndex + 1];
+  }
+  
+  // Otherwise, use the parent directory of CHANGELOG.md
+  const changelogIndex = parts.findIndex(p => p === 'CHANGELOG.md');
+  if (changelogIndex > 0) {
+    return parts[changelogIndex - 1];
+  }
+  
+  return null;
+}
+
+/**
+ * Check if a scope matches the package name
+ * Handles multiple scopes separated by comma
+ */
+function scopeMatchesPackage(scope, packageName) {
+  if (!scope || !packageName) {
+    return false;
+  }
+  
+  // Handle multiple scopes like "ssh,docker"
+  const scopes = scope.split(',').map(s => s.trim());
+  return scopes.includes(packageName);
+}
+
+/**
+ * Clean up empty sections (e.g., "### Features" with no entries)
+ */
+function cleanEmptySections(content) {
+  const lines = content.split('\n');
+  const result = [];
+  let i = 0;
+  
+  while (i < lines.length) {
+    const line = lines[i];
+    
+    // Check if this is a section header (### Something)
+    if (line.match(/^###\s+/)) {
+      // Look ahead to see if there are any entries in this section
+      let j = i + 1;
+      let hasEntries = false;
+      
+      // Skip empty lines after the header
+      while (j < lines.length && lines[j].trim() === '') {
+        j++;
+      }
+      
+      // Check if next non-empty line is an entry (starts with *)
+      if (j < lines.length && lines[j].match(/^\s*\*/)) {
+        hasEntries = true;
+      }
+      
+      if (hasEntries) {
+        // Keep the section header
+        result.push(line);
+      } else {
+        // Skip the section header and any empty lines after it
+        i = j - 1;
+      }
+    } else {
+      result.push(line);
+    }
+    
+    i++;
+  }
+  
+  // Remove any trailing empty lines before the next section
+  let cleaned = result.join('\n');
+  cleaned = cleaned.replace(/\n\n\n+/g, '\n\n'); // Reduce multiple empty lines to double
+  
+  return cleaned;
+}
+
+/**
+ * Filter changelog entries by scope and remove scope prefixes
+ */
+function processChangelogContent(content, packageName) {
+  if (!packageName) {
+    // If we can't determine package name, just remove scopes without filtering
+    return content.replace(/^(\s*\*)\s+\*\*[^:*]+:\*\*\s+/gm, '$1 ');
+  }
+  
+  const lines = content.split('\n');
+  const result = [];
+  let i = 0;
+  
+  while (i < lines.length) {
+    const line = lines[i];
+    const scope = extractScope(line);
+    
+    if (scope !== null) {
+      // This is a changelog entry with a scope
+      if (scopeMatchesPackage(scope, packageName)) {
+        // Keep this entry and remove the scope prefix
+        const cleanedLine = line.replace(/^(\s*\*)\s+\*\*[^:*]+:\*\*\s+/, '$1 ');
+        result.push(cleanedLine);
+      }
+      // else: skip this line (different scope)
+    } else {
+      // Not a scoped entry, keep as-is
+      result.push(line);
+    }
+    
+    i++;
+  }
+  
+  const filtered = result.join('\n');
+  return cleanEmptySections(filtered);
 }
 
 /**
@@ -57,17 +172,27 @@ function findChangelogFiles(dir, files = []) {
  * Process a single changelog file
  */
 function processChangelogFile(filePath) {
-  console.log(`Processing ${filePath}...`);
+  const packageName = extractPackageName(filePath);
+  console.log(`Processing ${filePath}${packageName ? ` (package: ${packageName})` : ''}...`);
   
   const content = fs.readFileSync(filePath, 'utf8');
-  const processed = removeScopeFromLine(content);
+  const processed = processChangelogContent(content, packageName);
   
   if (content !== processed) {
     fs.writeFileSync(filePath, processed, 'utf8');
-    console.log(`  ✓ Removed scopes from ${filePath}`);
+    
+    // Count changes
+    const originalLines = content.split('\n').filter(l => extractScope(l) !== null);
+    const processedLines = processed.split('\n').filter(l => extractScope(l) !== null);
+    const removedCount = originalLines.length - processedLines.length;
+    
+    if (removedCount > 0) {
+      console.log(`  ✓ Filtered ${removedCount} entry/entries with non-matching scope(s)`);
+    }
+    console.log(`  ✓ Removed scope prefixes from ${filePath}`);
     return true;
   } else {
-    console.log(`  - No scopes found in ${filePath}`);
+    console.log(`  - No changes needed in ${filePath}`);
     return false;
   }
 }
