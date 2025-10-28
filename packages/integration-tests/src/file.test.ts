@@ -1,11 +1,13 @@
 import fs from 'fs/promises';
 
 import { FileTool as DockerFileTool } from '@agent-remote/docker';
+import { FileTool as K8sFileTool } from '@agent-remote/k8s';
 import { FileTool as SSHFileTool } from '@agent-remote/ssh';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   getDockerContainer,
+  getK8sConfig,
   getSSHClient,
   getSSHSFTP,
   setupSSH,
@@ -32,7 +34,7 @@ describe('Integration Tests', () => {
 
   const implementations: Array<{
     name: string;
-    createFileTool: () => SSHFileTool | DockerFileTool;
+    createFileTool: () => SSHFileTool | DockerFileTool | K8sFileTool;
   }> = [
     {
       name: 'ssh-sftp',
@@ -47,12 +49,17 @@ describe('Integration Tests', () => {
       createFileTool: () =>
         new DockerFileTool({ container: getDockerContainer(), shell: 'sh' }),
     },
+    {
+      name: 'k8s',
+      createFileTool: () =>
+        new K8sFileTool({ ...getK8sConfig(), shell: 'sh' }),
+    },
   ];
 
   describe.each(implementations)(
     'FileTool ($name)',
     ({ name, createFileTool }) => {
-      let fileTool: SSHFileTool | DockerFileTool;
+      let fileTool: SSHFileTool | DockerFileTool | K8sFileTool;
 
       beforeAll(() => {
         fileTool = createFileTool();

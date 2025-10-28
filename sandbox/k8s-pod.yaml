@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: sandbox
+  namespace: default
+spec:
+  containers:
+  - name: sandbox
+    image: sandbox:latest
+    command: ["/bin/sh", "-c", "sleep infinity"]
+    volumeMounts:
+    - name: fixtures
+      mountPath: /home/dev/fixtures
+    - name: workspace
+      mountPath: /home/dev/workspace
+  volumes:
+  - name: fixtures
+    emptyDir: {}
+  - name: workspace
+    emptyDir: {}

@@ -1,83 +1,124 @@
-# agent-remote Dev Sandbox
+# Test Sandbox
 
-A containerized Ubuntu development environment accessible via SSH.
+This directory contains the test environment for agent-remote packages.
 
-## Prerequisites
+## Components
 
-- Docker and Docker Compose
-- SSH client
+### Docker Container (SSH & Docker testing)
+- **Container**: `sandbox`
+- **SSH Port**: 2222
+- **Credentials**: dev/dev
+- Used for testing SSH and Docker remote implementations
 
-## Running the Sandbox
+### Kubernetes (K8s testing)
+- **Kind Cluster**: `kind-control-plane`
+- **Pod**: `sandbox` in `default` namespace
+- Used for testing Kubernetes remote implementation
 
-Build and start the container:
+## Setup
+
+### Starting the environment
 
 ```bash
+# Start Docker container and Kind cluster
 cd sandbox
 docker-compose up -d
+
+# Wait for containers to be ready
+sleep 5
+
+# Setup the Kind cluster and deploy the sandbox pod
+./setup-kind.sh
 ```
 
-This will:
-
-- Build an Ubuntu 22.04 image with OpenSSH and dev tools
-- Start the container named `sandbox`
-- Expose SSH on port 2222
-- Mount the public key for authentication
-- Mount test fixtures at `/home/dev/fixtures`
-
-## Connecting
-
-SSH into the dev sandbox:
+### Verifying the setup
 
 ```bash
-ssh -i sandbox/ssh_key -p 2222 dev@localhost
-```
+# Check Docker container
+docker exec sandbox echo "Docker container is ready"
 
-Or use password authentication (password: `dev`):
-
-```bash
+# Check SSH access
 ssh -p 2222 dev@localhost
+
+# Check Kind cluster
+docker exec kind-control-plane kubectl get nodes
+docker exec kind-control-plane kubectl get pods
+
+# Check pod access
+docker exec kind-control-plane kubectl exec sandbox -- echo "K8s pod is ready"
 ```
 
-The `dev` user has passwordless sudo access.
+## Running Tests
 
-## Test Fixtures
+From the repository root:
 
-The sandbox includes test fixtures mounted at `/home/dev/fixtures`:
+```bash
+# Run all integration tests
+pnpm -r test:integration
 
+# Run tests for specific packages
+pnpm --filter @agent-remote/docker test:integration
+pnpm --filter @agent-remote/ssh test:integration
+pnpm --filter @agent-remote/k8s test:integration
+
+# Run integration tests that cover all implementations
+pnpm --filter integration-tests test
+```
+
+## Cleanup
+
+```bash
+docker-compose down -v
+```
+
+## Fixtures
+
+The `fixtures/` directory contains test files that are mounted into both the Docker container and copied into the K8s pod:
+
+- `simple.txt` - Basic text file
+- `log.txt` - Log file with patterns for grep testing
+- `mixed-case.txt` - File with mixed case content
 - `code/` - Sample code files (app.js, config.py, utils.ts)
 - `docs/` - Documentation files (API.md, README.md)
-- `empty/` - Empty directory
-- `hidden/` - Hidden files and directories
 - `nested/deep/` - Nested directory structure
-- Various text files for testing (simple.txt, log.txt, mixed-case.txt)
+- `hidden/` - Hidden files and directories
 
-## Managing the Container
+## Troubleshooting
 
-Stop the container:
-
-```bash
-cd sandbox
-docker-compose down
-```
-
-View logs:
+### Kind cluster not starting
 
 ```bash
-cd sandbox
-docker-compose logs -f
+# Check if the control plane is running
+docker ps | grep kind-control-plane
+
+# Check logs
+docker logs kind-control-plane
+
+# Restart
+docker-compose restart kind-control-plane
+./setup-kind.sh
 ```
 
-Rebuild after Dockerfile changes:
+### Pod not ready
 
 ```bash
-cd sandbox
-docker-compose up -d --build
+# Check pod status
+docker exec kind-control-plane kubectl get pod sandbox -o yaml
+
+# Check pod logs
+docker exec kind-control-plane kubectl logs sandbox
+
+# Recreate pod
+docker exec kind-control-plane kubectl delete pod sandbox
+./setup-kind.sh
 ```
 
-## Installed Tools
+### SSH connection issues
 
-- Git
-- curl, wget
-- vim, nano
-- build-essential (gcc, g++, make)
-- sudo
+```bash
+# Check SSH service
+docker exec sandbox service ssh status
+
+# Check SSH logs
+docker exec sandbox tail -f /var/log/auth.log
+```

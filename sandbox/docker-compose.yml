@@ -14,6 +14,27 @@ services:
     restart: unless-stopped
     hostname: sandbox
 
+  # kind (Kubernetes in Docker) control plane
+  kind-control-plane:
+    image: kindest/node:v1.31.0
+    container_name: kind-control-plane
+    privileged: true
+    restart: unless-stopped
+    volumes:
+      - /var
+      - /lib/modules:/lib/modules:ro
+    tmpfs:
+      - /tmp
+      - /run
+    networks:
+      - kind
+    environment:
+      - KUBECONFIG=/etc/kubernetes/admin.conf
+
 volumes:
   dev-home:
   empty-fixtures:
+
+networks:
+  kind:
+    driver: bridge

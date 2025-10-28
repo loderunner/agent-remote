@@ -1,9 +1,11 @@
 import { BashTool as DockerBashTool } from '@agent-remote/docker';
+import { BashTool as K8sBashTool } from '@agent-remote/k8s';
 import { BashOutputOutput, BashTool as SSHBashTool } from '@agent-remote/ssh';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import {
   getDockerContainer,
+  getK8sConfig,
   getSSHClient,
   setupSSH,
   teardownSSH,
@@ -20,7 +22,7 @@ describe('Integration Tests', () => {
 
   const implementations: Array<{
     name: string;
-    createBashTool: () => SSHBashTool | DockerBashTool;
+    createBashTool: () => SSHBashTool | DockerBashTool | K8sBashTool;
   }> = [
     {
       name: 'ssh',
@@ -31,12 +33,16 @@ describe('Integration Tests', () => {
       createBashTool: () =>
         new DockerBashTool({ container: getDockerContainer(), shell: 'bash' }),
     },
+    {
+      name: 'k8s',
+      createBashTool: () => new K8sBashTool({ ...getK8sConfig(), shell: 'bash' }),
+    },
   ];
 
   describe.each(implementations)(
     'BashTool Background ($name)',
     ({ name: _name, createBashTool }) => {
-      let bashTool: SSHBashTool | DockerBashTool;
+      let bashTool: SSHBashTool | DockerBashTool | K8sBashTool;
 
       const waitForStatus = async (
         shellId: string,
