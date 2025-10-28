@@ -293,12 +293,16 @@ export class Remote {
         try {
           const output = await tool.grep(input);
           let text = '';
-          if (output.mode === 'content') {
-            text = output.content;
-          } else if (output.mode === 'files_with_matches') {
-            text = `Found ${output.numFiles} files\n${output.filenames.join('\n')}`;
-          } else if (output.mode === 'count') {
-            text = `Found ${output.numMatches} matches`;
+          switch (output.mode) {
+            case 'content':
+              text = output.content;
+              break;
+            case 'files_with_matches':
+              text = `Found ${output.numFiles} files\n${output.filenames.join('\n')}`;
+              break;
+            case 'count':
+              text = `Found ${output.numMatches} matches`;
+              break;
           }
           return {
             content: [

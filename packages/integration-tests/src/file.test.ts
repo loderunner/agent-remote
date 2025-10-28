@@ -155,7 +155,7 @@ describe('Integration Tests', () => {
           await new Promise<void>((resolve, reject) => {
             getSSHSFTP().mkdir(testDir, { mode: 0o755 }, (err) => {
               // Ignore error if directory already exists
-              if (err && err.message?.includes('Failure')) {
+              if (err && err.message.includes('Failure')) {
                 resolve();
                 return;
               }

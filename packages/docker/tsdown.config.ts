@@ -70,5 +70,3 @@ export default defineConfig([
   // Build type declarations
   typeDeclarationsTarget,
 ]);
-
-

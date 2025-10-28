@@ -28,7 +28,7 @@ async function setupSSH(): Promise<void> {
 }
 
 function teardownSSH(): void {
-  client?.end();
+  client.end();
 }
 
 describe('SSH BashTool - Unit Tests', () => {
@@ -60,5 +60,3 @@ describe('SSH BashTool - Unit Tests', () => {
     });
   });
 });
-
-
