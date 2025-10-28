@@ -1,5 +1,5 @@
 {
   "packages/core": "0.0.2",
-  "packages/ssh": "0.0.3",
-  "packages/docker": "0.0.1"
+  "packages/ssh": "0.0.4",
+  "packages/docker": "0.0.2"
 }

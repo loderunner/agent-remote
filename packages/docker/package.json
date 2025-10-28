@@ -1,6 +1,6 @@
 {
   "name": "@agent-remote/docker",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Docker remote tools for AI agents",
   "license": "Apache-2.0",
   "type": "module",

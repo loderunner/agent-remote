@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.4](https://github.com/loderunner/agent-remote/compare/ssh-v0.0.3...ssh-v0.0.4) (2025-10-28)
+
+
+### Features
+
+* **docker:** docker remote tools ([#20](https://github.com/loderunner/agent-remote/issues/20)) ([0358c4b](https://github.com/loderunner/agent-remote/commit/0358c4bf181125f888134dfaf1b75d66b5c6e714))
+
+
+### Bug Fixes
+
+* **ssh:** only run specified tsdown build in e2e tests ([#22](https://github.com/loderunner/agent-remote/issues/22)) ([c6ebc67](https://github.com/loderunner/agent-remote/commit/c6ebc67648b10f2b70b27f6388bfce99b3df5429))
+
 ## [0.0.3](https://github.com/loderunner/claude-remote/compare/ssh-v0.0.2...ssh-v0.0.3) (2025-10-27)
 
 
