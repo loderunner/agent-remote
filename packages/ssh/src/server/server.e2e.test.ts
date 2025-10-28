@@ -9,6 +9,7 @@
  */
 
 import { execFile } from 'child_process';
+import { access } from 'fs/promises';
 import { promisify } from 'util';
 
 import { build } from 'tsdown';
@@ -25,6 +26,32 @@ import {
 import { serverTarget } from '../../tsdown.config';
 
 const execFileAsync = promisify(execFile);
+
+/**
+ * Wait for a file to be fully written and accessible.
+ * This helps prevent race conditions where the build completes
+ * but the file hasn't been fully flushed to disk yet.
+ */
+async function waitForFile(
+  filePath: string,
+  maxAttempts = 10,
+  delayMs = 100,
+): Promise<void> {
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      await access(filePath);
+      // File exists, now try to verify it's readable by executing it with --help
+      // This ensures it's not just present but also syntactically valid
+      await execFileAsync('node', [filePath, '--help'], { timeout: 2000 });
+      return;
+    } catch {
+      if (attempt < maxAttempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+  throw new Error(`File ${filePath} not ready after ${maxAttempts} attempts`);
+}
 
 /**
  * Helper to run the server with args and capture output.
@@ -77,7 +104,10 @@ describe('MCP Server Executable - End-to-End Tests', () => {
       // Build the project
       await build({ ...serverTarget, logLevel: 'silent' });
 
-      // Use the built executable
+      // Wait for the file to be fully written and accessible
+      // This prevents race conditions in CI where the file might not be
+      // fully flushed to disk immediately after the build completes
+      await waitForFile('dist/server.js');
     } catch (error) {
       const execError = error as { stdout?: string; stderr?: string };
       const errorMessage = [
