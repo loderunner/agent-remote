@@ -62,6 +62,8 @@ export type RemoteConfig = {
   shell?: string;
 };
 
+export type ToolConfig = Required<RemoteConfig>;
+
 /**
  * Docker remote manager that provides tools for executing commands and
  * managing files on Docker containers.
@@ -100,7 +102,10 @@ export class Remote {
    * For terminal operations like git, npm, docker, etc.
    */
   get bash(): BashToolDefinition {
-    this.bashTool ??= new BashTool(this.container, this.shell);
+    this.bashTool ??= new BashTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.bashTool;
 
     return {
@@ -140,7 +145,10 @@ export class Remote {
    * Retrieves output from a running or completed background bash shell.
    */
   get bashOutput(): BashOutputToolDefinition {
-    this.bashTool ??= new BashTool(this.container, this.shell);
+    this.bashTool ??= new BashTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.bashTool;
 
     return {
@@ -180,7 +188,10 @@ export class Remote {
    * Kills a running background shell by its ID.
    */
   get killBash(): KillBashToolDefinition {
-    this.bashTool ??= new BashTool(this.container, this.shell);
+    this.bashTool ??= new BashTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.bashTool;
 
     return {
@@ -220,7 +231,10 @@ export class Remote {
    * Searches for patterns in files or directories.
    */
   get grep(): GrepToolDefinition {
-    this.grepTool ??= new GrepTool(this.container);
+    this.grepTool ??= new GrepTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.grepTool;
 
     return {
@@ -232,12 +246,16 @@ export class Remote {
         try {
           const output = await tool.grep(input);
           let text = '';
-          if (output.mode === 'content') {
-            text = output.content;
-          } else if (output.mode === 'files_with_matches') {
-            text = `Found ${output.numFiles} files\n${output.filenames.join('\n')}`;
-          } else if (output.mode === 'count') {
-            text = `Found ${output.numMatches} matches`;
+          switch (output.mode) {
+            case 'content':
+              text = output.content;
+              break;
+            case 'files_with_matches':
+              text = `Found ${output.numFiles} files\n${output.filenames.join('\n')}`;
+              break;
+            case 'count':
+              text = `Found ${output.numMatches} matches`;
+              break;
           }
           return {
             content: [
@@ -268,7 +286,10 @@ export class Remote {
    * Reads files from the remote filesystem.
    */
   get read(): ReadToolDefinition {
-    this.fileTool ??= new FileTool(this.container, this.shell);
+    this.fileTool ??= new FileTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.fileTool;
 
     return {
@@ -316,7 +337,10 @@ export class Remote {
    * Writes content to files on the remote filesystem.
    */
   get write(): WriteToolDefinition {
-    this.fileTool ??= new FileTool(this.container, this.shell);
+    this.fileTool ??= new FileTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.fileTool;
 
     return {
@@ -356,7 +380,10 @@ export class Remote {
    * Edits files by replacing text on the remote filesystem.
    */
   get edit(): EditToolDefinition {
-    this.fileTool ??= new FileTool(this.container, this.shell);
+    this.fileTool ??= new FileTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.fileTool;
 
     return {
@@ -403,7 +430,10 @@ export class Remote {
    * Searches for files matching glob patterns.
    */
   get glob(): GlobToolDefinition {
-    this.globTool ??= new GlobTool(this.container);
+    this.globTool ??= new GlobTool({
+      container: this.container,
+      shell: this.shell,
+    });
     const tool = this.globTool;
 
     return {

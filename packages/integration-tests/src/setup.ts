@@ -38,8 +38,8 @@ export async function setupSSH(): Promise<void> {
  * Tear down SSH connection
  */
 export function teardownSSH(): void {
-  sftp?.end();
-  client?.end();
+  sftp.end();
+  client.end();
 }
 
 /**

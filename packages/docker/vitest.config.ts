@@ -18,6 +18,13 @@ export default defineConfig({
       {
         test: {
           ...test,
+          name: 'integration',
+          include: ['src/**/*.integration.test.ts'],
+        },
+      },
+      {
+        test: {
+          ...test,
           name: 'e2e',
           include: ['src/**/*.e2e.test.ts'],
         },

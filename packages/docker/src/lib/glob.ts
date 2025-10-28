@@ -4,8 +4,14 @@ import type { GlobInput, GlobOutput } from '@agent-remote/core';
 import { globInputSchema } from '@agent-remote/core';
 import { minimatch } from 'minimatch';
 
+import { ToolConfig } from './remote';
+
 export class GlobTool {
-  constructor(private readonly container: string) {}
+  private readonly container: string;
+
+  constructor(config: ToolConfig) {
+    this.container = config.container;
+  }
 
   /**
    * Searches for files matching a glob pattern
@@ -22,25 +28,23 @@ export class GlobTool {
     const hasPathSeparator = input.pattern.includes('/');
 
     // Build find command - recurse if pattern has ** or contains path separators
-    let command = `find ${JSON.stringify(input.base_path)} -mindepth 1`;
+    const args = [
+      'find',
+      JSON.stringify(input.base_path).slice(1, -1),
+      '-mindepth',
+      '1',
+    ];
     if (!isRecursive && !hasPathSeparator) {
       // Only search one level deep for simple patterns like *.txt
-      command += ' -maxdepth 1';
+      args.push('-maxdepth', '1');
     }
 
     return new Promise<GlobOutput>((resolve, reject) => {
-      const process = spawn('docker', [
-        'exec',
-        '-i',
-        this.container,
-        'sh',
-        '-c',
-        command,
-      ]);
+      const process = spawn('docker', ['exec', '-i', this.container, ...args]);
 
       let output = '';
 
-      process.stdout?.on('data', (data: Buffer) => {
+      process.stdout.on('data', (data: Buffer) => {
         output += data.toString();
       });
 
@@ -48,31 +52,42 @@ export class GlobTool {
         reject(err);
       });
 
-      process.on('close', () => {
-        output = output.trim();
-        const allFiles =
-          output === '' ? [] : output.split('\n').filter((f) => f.length > 0);
+      process.on(
+        'close',
+        (code: number | null, signal: NodeJS.Signals | null) => {
+          if (code !== 0) {
+            reject(
+              new Error(
+                `Command failed with code ${code}` +
+                  (signal ? ` and signal ${signal}` : ''),
+              ),
+            );
+            return;
+          }
 
-        // Filter files using minimatch
-        // Convert absolute paths to relative for matching
-        // Note: dot option controls whether wildcards match hidden files
-        const matches = allFiles.filter((filePath) => {
-          const relativePath = filePath.startsWith(input.base_path)
-            ? filePath.slice(input.base_path.length + 1)
-            : filePath;
-          return minimatch(relativePath, input.pattern, {
-            matchBase: false,
-            dot: input.include_hidden ?? false,
+          output = output.trim();
+          const allFiles =
+            output === '' ? [] : output.split('\n').filter((f) => f.length > 0);
+
+          // Filter files using minimatch
+          // Convert absolute paths to relative for matching
+          // Note: dot option controls whether wildcards match hidden files
+          const matches = allFiles.filter((filePath) => {
+            const relativePath = filePath.startsWith(input.base_path)
+              ? filePath.slice(input.base_path.length + 1)
+              : filePath;
+            return minimatch(relativePath, input.pattern, {
+              matchBase: false,
+              dot: input.include_hidden ?? false,
+            });
           });
-        });
 
-        resolve({
-          matches,
-          count: matches.length,
-        });
-      });
+          resolve({
+            matches,
+            count: matches.length,
+          });
+        },
+      );
     });
   }
 }
-
-

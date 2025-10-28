@@ -28,7 +28,8 @@ describe('Integration Tests', () => {
     },
     {
       name: 'docker',
-      createGrepTool: () => new DockerGrepTool(getDockerContainer()),
+      createGrepTool: () =>
+        new DockerGrepTool({ container: getDockerContainer(), shell: 'sh' }),
     },
   ];
 

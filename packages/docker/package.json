@@ -34,8 +34,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run --project=unit",
+    "test:integration": "vitest run --project=integration",
     "test:e2e": "vitest run --project=e2e",
     "test:watch:unit": "vitest --project=unit",
+    "test:watch:integration": "vitest --project=integration",
     "test:watch:e2e": "vitest --project=e2e",
     "server": "tsx src/server/server.ts",
     "server:watch": "tsx --watch src/server/server.ts",
@@ -69,5 +71,3 @@
     "vitest": "catalog:"
   }
 }
-
-

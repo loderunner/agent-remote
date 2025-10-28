@@ -60,7 +60,8 @@ describe('Integration Tests', () => {
     },
     {
       name: 'docker',
-      createBashTool: () => new DockerBashTool(getDockerContainer(), 'bash'),
+      createBashTool: () =>
+        new DockerBashTool({ container: getDockerContainer(), shell: 'bash' }),
     },
   ];
 
@@ -84,10 +85,7 @@ describe('Integration Tests', () => {
         expect(result.output).toBe('');
 
         // Poll for output (handles Docker exec startup time)
-        const output = await waitForBackgroundOutput(
-          bashTool,
-          result.shellId!,
-        );
+        const output = await waitForBackgroundOutput(bashTool, result.shellId!);
         expect(output.output).toContain('Hello, Background!');
         expect(output.status).toBe('completed');
         expect(output.exitCode).toBe(0);
@@ -216,7 +214,11 @@ describe('Integration Tests', () => {
 
         expect(result.shellId).toBeDefined();
 
-        const output = await waitForBackgroundOutput(bashTool, result.shellId!, { filter: '^found' });
+        const output = await waitForBackgroundOutput(
+          bashTool,
+          result.shellId!,
+          { filter: '^found' },
+        );
 
         expect(output.output).toContain('found1');
         expect(output.output).toContain('found2');

@@ -3,8 +3,14 @@ import { spawn } from 'node:child_process';
 import type { GrepInput, GrepOutput } from '@agent-remote/core';
 import { grepInputSchema } from '@agent-remote/core';
 
+import { ToolConfig } from './remote';
+
 export class GrepTool {
-  constructor(private readonly container: string) {}
+  private readonly container: string;
+
+  constructor(config: ToolConfig) {
+    this.container = config.container;
+  }
 
   public async grep(input: GrepInput): Promise<GrepOutput> {
     grepInputSchema.parse(input);
@@ -60,7 +66,7 @@ export class GrepTool {
 
       let output = '';
 
-      process.stdout?.on('data', (data: Buffer) => {
+      process.stdout.on('data', (data: Buffer) => {
         output += data.toString();
       });
 
@@ -100,5 +106,3 @@ export class GrepTool {
     });
   }
 }
-
-

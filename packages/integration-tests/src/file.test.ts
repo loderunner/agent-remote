@@ -44,7 +44,8 @@ describe('Integration Tests', () => {
     },
     {
       name: 'docker',
-      createFileTool: () => new DockerFileTool(getDockerContainer()),
+      createFileTool: () =>
+        new DockerFileTool({ container: getDockerContainer(), shell: 'sh' }),
     },
   ];
 

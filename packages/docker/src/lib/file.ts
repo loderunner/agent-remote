@@ -15,14 +15,19 @@ import {
 } from '@agent-remote/core';
 import { structuredPatch } from 'diff';
 
+import { ToolConfig } from './remote';
+
 /**
  * File tool that uses docker exec for file operations
  */
 export class FileTool {
-  constructor(
-    private readonly container: string,
-    private readonly shell: string = 'sh',
-  ) {}
+  private readonly container: string;
+  private readonly shell: string;
+
+  constructor(config: ToolConfig) {
+    this.container = config.container;
+    this.shell = config.shell;
+  }
 
   private async execCommand(args: string[]): Promise<string> {
     return new Promise<string>((resolve, reject) => {
@@ -31,11 +36,11 @@ export class FileTool {
       let output = '';
       let errorOutput = '';
 
-      process.stdout?.on('data', (data: Buffer) => {
+      process.stdout.on('data', (data: Buffer) => {
         output += data.toString();
       });
 
-      process.stderr?.on('data', (data: Buffer) => {
+      process.stderr.on('data', (data: Buffer) => {
         errorOutput += data.toString();
       });
 
@@ -105,12 +110,7 @@ export class FileTool {
 
       let errorOutput = '';
 
-      // Consume stdout (should be empty for redirect)
-      process.stdout?.on('data', () => {
-        // Discard stdout
-      });
-
-      process.stderr?.on('data', (data: Buffer) => {
+      process.stderr.on('data', (data: Buffer) => {
         errorOutput += data.toString();
       });
 
@@ -178,5 +178,3 @@ export class FileTool {
     return { replacements, diff };
   }
 }
-
-

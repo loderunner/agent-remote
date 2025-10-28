@@ -1,4 +1,7 @@
-import type { ChildProcess } from 'node:child_process';
+import type {
+  ChildProcess,
+  ChildProcessWithoutNullStreams,
+} from 'node:child_process';
 import { spawn } from 'node:child_process';
 
 import type {
@@ -16,6 +19,8 @@ import {
 } from '@agent-remote/core';
 import { customAlphabet } from 'nanoid';
 
+import { ToolConfig } from './remote';
+
 const nanoid = customAlphabet(
   'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
   8,
@@ -26,13 +31,15 @@ type Shell = BashOutputOutput & {
 };
 
 export class BashTool {
-  private shellProcess: ChildProcess | null = null;
+  private readonly container: string;
+  private readonly shellCommand: string;
+  private shellProcess: ChildProcessWithoutNullStreams | null = null;
   private readonly shells = new Map<string, Shell>();
 
-  constructor(
-    private readonly container: string,
-    private readonly shell: string = 'sh',
-  ) {}
+  constructor(config: ToolConfig) {
+    this.container = config.container;
+    this.shellCommand = config.shell;
+  }
 
   public async execute(input: BashInput): Promise<BashOutput> {
     bashInputSchema.parse(input);
@@ -44,13 +51,13 @@ export class BashTool {
     return this.executeInForeground(input);
   }
 
-  private async init(): Promise<ChildProcess> {
+  public async init(): Promise<ChildProcessWithoutNullStreams> {
     if (!this.shellProcess || this.shellProcess.exitCode !== null) {
       this.shellProcess = spawn('docker', [
         'exec',
         '-i',
         this.container,
-        this.shell,
+        this.shellCommand,
       ]);
 
       this.shellProcess.on('close', () => {
@@ -78,7 +85,7 @@ export class BashTool {
       let buffer = '';
       let timedOut = false;
 
-      const onData = (data: Buffer) => {
+      const onStdout = (data: Buffer) => {
         // Don't accumulate output after timeout, just consume it
         if (timedOut) {
           return;
@@ -123,9 +130,9 @@ export class BashTool {
             ? Number.parseInt(exitCodePart.slice(colonIndex + 1))
             : undefined;
 
-        shell.stdout?.removeListener('data', onData);
-        shell.stderr?.removeListener('data', onError);
-        shell.removeListener('error', onProcessError);
+        shell.stdout.removeListener('data', onStdout);
+        shell.stderr.removeListener('data', onStderr);
+        shell.removeListener('error', onError);
 
         const trimmed = output.trim();
         resolve({
@@ -134,35 +141,35 @@ export class BashTool {
         });
       };
 
-      const onError = (data: Buffer) => {
+      const onStderr = (data: Buffer) => {
         // Stderr data - include it in the output
         if (!timedOut) {
           buffer += data.toString();
         }
       };
 
-      const onProcessError = (err: unknown) => {
-        shell.stdout?.removeListener('data', onData);
-        shell.stderr?.removeListener('data', onError);
+      const onError = (err: unknown) => {
+        shell.stdout.removeListener('data', onStdout);
+        shell.stderr.removeListener('data', onStderr);
         reject(err);
       };
 
-      shell.stdout?.on('data', onData);
-      shell.stderr?.on('data', onError);
-      shell.on('error', onProcessError);
+      shell.stdout.on('data', onStdout);
+      shell.stderr.on('data', onStderr);
+      shell.on('error', onError);
 
       abortSignal.addEventListener('abort', () => {
         // Mark as timed out
         timedOut = true;
 
         // Clean up listeners immediately
-        shell.stdout?.removeListener('data', onData);
-        shell.stderr?.removeListener('data', onError);
-        shell.removeListener('error', onProcessError);
+        shell.stdout.removeListener('data', onStdout);
+        shell.stderr.removeListener('data', onStderr);
+        shell.removeListener('error', onError);
 
         // Kill the persistent shell - it's in an unknown state after timeout
         shell.kill();
-        this.foregroundShell = null;
+        this.shellProcess = null;
 
         // Extract output before the interrupt
         const output = buffer.slice(0, buffer.lastIndexOf('\n') + 1);
@@ -173,7 +180,7 @@ export class BashTool {
         });
       });
 
-      shell.stdin?.write(command + '\n');
+      shell.stdin.write(command + '\n');
     });
   }
 
@@ -184,7 +191,7 @@ export class BashTool {
     const process = spawn('docker', [
       'exec',
       this.container,
-      this.shell,
+      this.shellCommand,
       '-c',
       input.command,
     ]);
@@ -195,7 +202,7 @@ export class BashTool {
       process,
     });
 
-    process.stdout?.on('data', (data: Buffer) => {
+    process.stdout.on('data', (data: Buffer) => {
       const shell = this.shells.get(shellId);
       if (!shell) {
         return;
@@ -204,7 +211,7 @@ export class BashTool {
       shell.output += text;
     });
 
-    process.stderr?.on('data', (data: Buffer) => {
+    process.stderr.on('data', (data: Buffer) => {
       const shell = this.shells.get(shellId);
       if (!shell) {
         return;
@@ -286,10 +293,10 @@ export class BashTool {
       // Node.js expects 'SIGTERM', 'SIGKILL', etc.
       // SSH2 uses 'TERM', 'KILL', etc.
       // Normalize the signal name
-      let signal = input.signal ?? 'KILL';
-      if (!signal.startsWith('SIG')) {
-        signal = `SIG${signal}`;
-      }
+      const baseSignal = input.signal ?? 'KILL';
+      const signal = (
+        baseSignal.startsWith('SIG') ? baseSignal : `SIG${baseSignal}`
+      ) as NodeJS.Signals;
 
       shell.process.kill(signal);
     });

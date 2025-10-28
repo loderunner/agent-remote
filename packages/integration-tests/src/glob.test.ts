@@ -28,7 +28,8 @@ describe('Integration Tests', () => {
     },
     {
       name: 'docker',
-      createGlobTool: () => new DockerGlobTool(getDockerContainer()),
+      createGlobTool: () =>
+        new DockerGlobTool({ container: getDockerContainer(), shell: 'sh' }),
     },
   ];
 

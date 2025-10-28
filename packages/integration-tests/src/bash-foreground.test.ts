@@ -28,7 +28,8 @@ describe('Integration Tests', () => {
     },
     {
       name: 'docker',
-      createBashTool: () => new DockerBashTool(getDockerContainer(), 'bash'),
+      createBashTool: () =>
+        new DockerBashTool({ container: getDockerContainer(), shell: 'bash' }),
     },
   ];
 

@@ -56,11 +56,8 @@ function parseDockerConfig(): { container: string; shell?: string } {
     .epilogue(
       'Usage:\n' +
         '  Specify the container name to execute commands on.\n' +
-        '  Optionally specify a shell to use (sh, bash, zsh, etc.).\n\n' +
-        'Examples:\n' +
-        '  remote-docker-mcp --container my-app\n' +
-        '  remote-docker-mcp --container my-app --shell bash\n' +
-        '  DOCKER_CONTAINER=my-app remote-docker-mcp\n',
+        '  Optionally specify a shell to use (sh, bash, zsh, etc.).\n' +
+        '    Shell executable must be available in the container.\n\n',
     )
     .parseSync();
 
@@ -226,5 +223,3 @@ main().catch((error) => {
   logger.error(error, 'Failed to start MCP server');
   process.exit(1);
 });
-
-
