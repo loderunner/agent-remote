@@ -32,11 +32,10 @@ const execFileAsync = promisify(execFile);
  * This helps prevent race conditions where the build completes
  * but the file hasn't been fully flushed to disk yet.
  */
-async function waitForFile(
-  filePath: string,
-  maxAttempts = 10,
-  delayMs = 100,
-): Promise<void> {
+async function waitForFile(filePath: string): Promise<void> {
+  const maxAttempts = 10;
+  const delayMs = 100;
+
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
       await access(filePath);
