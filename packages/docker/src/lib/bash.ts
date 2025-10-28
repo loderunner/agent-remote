@@ -273,6 +273,16 @@ export class BashTool {
     };
   }
 
+  public async getStatus(
+    input: BashOutputInput,
+  ): Promise<BashOutputOutput['status']> {
+    const shell = this.shells.get(input.shell_id);
+    if (!shell) {
+      throw new Error('Shell not found');
+    }
+    return shell.status;
+  }
+
   public async killShell(input: KillShellInput): Promise<KillShellOutput> {
     killShellInputSchema.parse(input);
 
