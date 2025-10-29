@@ -24,24 +24,6 @@
       "restart": true,
       "cwd": "${workspaceFolder}/packages/ssh",
       "console": "integratedTerminal"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Example: Claude Agent SDK",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["start"],
-      "cwd": "${workspaceFolder}/examples/claude-agent-sdk",
-      "console": "integratedTerminal"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Build SSH Package",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["build"],
-      "cwd": "${workspaceFolder}/packages/ssh",
-      "console": "integratedTerminal"
     }
   ]
 }
