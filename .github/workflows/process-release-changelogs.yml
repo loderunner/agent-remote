@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
-      - "**/CHANGELOG.md"
+      - '**/CHANGELOG.md'
 
 permissions:
   contents: write
@@ -27,7 +27,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
 
       - name: Remove scopes from changelogs
         run: |
